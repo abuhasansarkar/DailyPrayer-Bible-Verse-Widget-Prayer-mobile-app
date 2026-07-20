@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
-import { BIBLE_BOOKS } from '@/hooks/use-bible';
+import { BIBLE_BOOKS } from '@/constants/bibleBooks';
 
 export default function BibleIndexScreen() {
   const systemScheme = useColorScheme();
@@ -21,7 +21,7 @@ export default function BibleIndexScreen() {
 
   const filtered = BIBLE_BOOKS.filter((b) => {
     const matchesSearch = b.name.toLowerCase().includes(search.toLowerCase()) ||
-                          b.abbreviation.toLowerCase().includes(search.toLowerCase());
+                          b.slug.toLowerCase().includes(search.toLowerCase());
     const matchesTestament = testament === 'ALL' || b.testament === testament;
     return matchesSearch && matchesTestament;
   });
@@ -112,7 +112,7 @@ export default function BibleIndexScreen() {
                   }}
                 >
                   <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: textPrimary }}>{book.name}</Text>
-                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 10, color: textSecondary }}>{book.chapterCount} ch</Text>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 10, color: textSecondary }}>{book.chapters} ch</Text>
                 </Pressable>
               ))}
             </View>
@@ -138,7 +138,7 @@ export default function BibleIndexScreen() {
                   }}
                 >
                   <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: textPrimary }}>{book.name}</Text>
-                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 10, color: textSecondary }}>{book.chapterCount} ch</Text>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 10, color: textSecondary }}>{book.chapters} ch</Text>
                 </Pressable>
               ))}
             </View>

@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
-import { BIBLE_BOOKS } from '@/hooks/use-bible';
+import { BIBLE_BOOKS } from '@/constants/bibleBooks';
 
 const TOPICS = [
   { id: 'hope',        name: 'Hope',        icon: '✨', color: '#F2B84B' },

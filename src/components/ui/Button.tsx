@@ -109,6 +109,9 @@ export function Button({
     <Pressable
       onPress={handlePress}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityLabel={props.accessibilityLabel ?? title}
+      accessibilityState={{ disabled: disabled || loading }}
       style={({ pressed }) => [
         baseViewStyle,
         sizeStyles[size],

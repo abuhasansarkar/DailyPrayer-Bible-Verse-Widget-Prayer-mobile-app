@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
-import { fetchBibleChapter } from '@/services/bible-api';
-import { BIBLE_BOOKS } from '@/hooks/use-bible';
+import { getBibleChapter, formatBibleText, getBookSlug } from '@/services/bibleApi';
+import { BIBLE_BOOKS } from '@/constants/bibleBooks';
 
 interface ChapterVerse {
   id: string;
@@ -33,8 +33,8 @@ export default function BibleChapterScreen() {
 
   const bookName = decodeURIComponent(book ?? '');
   const currentChapter = parseInt(chapter ?? '1', 10);
-  const bookInfo = BIBLE_BOOKS.find((b) => b.name === bookName);
-  const totalChapters = bookInfo?.chapterCount ?? 150;
+  const bookInfo = BIBLE_BOOKS.find((b) => b.name === bookName || b.slug === bookName.toLowerCase());
+  const totalChapters = bookInfo?.chapters ?? 150;
 
   const bg = isDark ? '#1E1C18' : '#FFF9EE';
   const surfaceBg = isDark ? '#2A2720' : '#F1E6D3';
@@ -47,8 +47,14 @@ export default function BibleChapterScreen() {
       setLoading(true);
       setVerses([]);
       try {
-        const result = await fetchBibleChapter(bookName, currentChapter);
-        setVerses(result);
+        const slug = getBookSlug(bookName);
+        const version = preferences.preferredTranslation ?? 'en-kjv';
+        const result = await getBibleChapter({ version, book: slug, chapter: currentChapter });
+        const mapped = result.map((item) => ({
+          verse_number: parseInt(item.verse, 10),
+          text: formatBibleText(item.text),
+        }));
+        setVerses(mapped);
       } catch (e) {
         console.warn('Error loading Bible chapter:', e);
       } finally {
@@ -56,7 +62,7 @@ export default function BibleChapterScreen() {
       }
     }
     load();
-  }, [bookName, currentChapter]);
+  }, [bookName, currentChapter, preferences.preferredTranslation]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>

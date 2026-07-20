@@ -15,8 +15,8 @@ let notificationsModule: typeof import('expo-notifications') | null = null;
 let handlerConfigured = false;
 
 function getNotifications(): typeof import('expo-notifications') | null {
-  if (isExpoGo) {
-    // Remote & Push notifications are not supported in Expo Go on Android (SDK 53+)
+  if (isExpoGo && Platform.OS === 'android') {
+    // Expo SDK 53+ removed expo-notifications support in Expo Go on Android.
     return null;
   }
   if (notificationsModule) {
@@ -42,6 +42,7 @@ function getNotifications(): typeof import('expo-notifications') | null {
     return null;
   }
 }
+
 
 export async function requestNotificationPermission(): Promise<boolean> {
   try {

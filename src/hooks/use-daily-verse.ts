@@ -52,6 +52,19 @@ export function useDailyVerse() {
             verse_text: fallback.text,
             verse_book: fallback.book,
           });
+        } else {
+          // Live CDN fallback from jsDelivr Bible API
+          const { getBibleVerse, formatBibleText } = await import('@/services/bibleApi');
+          const live = await getBibleVerse({ version: 'en-kjv', book: 'john', chapter: 3, verse: 16 });
+          setVerse({
+            id: 'verse-john-3-16',
+            date: today,
+            reflection: 'For God so loved the world that He gave His only begotten Son.',
+            prayer: 'Lord, thank You for Your grace and unfailing love.',
+            verse_reference: 'John 3:16',
+            verse_text: formatBibleText(live.text),
+            verse_book: 'John',
+          });
         }
       }
     } catch (e: any) {

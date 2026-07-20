@@ -47,6 +47,13 @@ async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
     // Update schema version
     await db.execAsync(`PRAGMA user_version = ${DB_VERSION}`);
   }
+
+  // Ensure is_answered column exists on journal_entries for existing databases
+  try {
+    await db.execAsync('ALTER TABLE journal_entries ADD COLUMN is_answered INTEGER NOT NULL DEFAULT 0;');
+  } catch {
+    // Column already exists
+  }
 }
 
 export async function closeDb(): Promise<void> {

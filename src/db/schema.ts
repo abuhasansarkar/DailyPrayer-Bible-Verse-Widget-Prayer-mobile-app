@@ -81,6 +81,7 @@ export const CREATE_TABLES_SQL = `
     title TEXT,
     body TEXT NOT NULL,
     mood TEXT,
+    is_answered INTEGER NOT NULL DEFAULT 0,
     tags TEXT NOT NULL DEFAULT '[]',
     linked_verse_id TEXT,
     linked_prayer_id TEXT,
@@ -202,7 +203,15 @@ export const CREATE_TABLES_SQL = `
     synced INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  -- Performance Indexes
+  CREATE INDEX IF NOT EXISTS idx_daily_verses_date ON daily_verses(date);
+  CREATE INDEX IF NOT EXISTS idx_favorites_lookup ON favorites(type, ref_id);
+  CREATE INDEX IF NOT EXISTS idx_journal_created ON journal_entries(created_at);
+  CREATE INDEX IF NOT EXISTS idx_verses_book_chapter ON verses(book, chapter);
+  CREATE INDEX IF NOT EXISTS idx_guided_prayers_cat ON guided_prayers(category);
 `;
+
 
 export const DB_VERSION = 1;
 

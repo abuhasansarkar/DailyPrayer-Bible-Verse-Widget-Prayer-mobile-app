@@ -115,8 +115,13 @@ export function useBible(book?: string, chapter?: number) {
       if (verses.length > 0) {
         setChapterData({ book: bookName, chapter: chapterNum, verses, totalChapters });
       } else {
-        const { fetchBibleChapter } = await import('@/services/bible-api');
-        const apiVerses = await fetchBibleChapter(bookName, chapterNum);
+        const { getBibleChapter, formatBibleText, getBookSlug } = await import('@/services/bibleApi');
+        const slug = getBookSlug(bookName);
+        const apiVersesData = await getBibleChapter({ version: 'en-kjv', book: slug, chapter: chapterNum });
+        const apiVerses = apiVersesData.map((item) => ({
+          verse_number: parseInt(item.verse, 10),
+          text: formatBibleText(item.text),
+        }));
         setChapterData({
           book: bookName,
           chapter: chapterNum,

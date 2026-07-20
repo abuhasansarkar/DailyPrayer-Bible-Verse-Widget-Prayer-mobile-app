@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, useColorScheme, RefreshControl, Animated as RNAnimated } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Pressable, TextInput, useColorScheme, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, useSharedValue, withRepeat, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
 import { getDb, todayDate } from '@/db/client';
@@ -46,18 +46,16 @@ export default function TodayScreen() {
   const [loading, setLoading] = useState(true);
   const [milestone, setMilestone] = useState<StreakMilestone | null>(null);
 
-  // Skeleton pulse animation
-  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+  // UI-thread Reanimated pulse animation for 60fps skeleton rendering
+  const pulseOpacity = useSharedValue(1);
   useEffect(() => {
-    const loop = RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(pulseAnim, { toValue: 0.45, duration: 850, useNativeDriver: true }),
-        RNAnimated.timing(pulseAnim, { toValue: 1, duration: 850, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [pulseAnim]);
+    pulseOpacity.value = withRepeat(withTiming(0.45, { duration: 850 }), -1, true);
+  }, [pulseOpacity]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: pulseOpacity.value,
+  }));
+
 
   async function loadTodayData() {
     try {
@@ -140,15 +138,15 @@ export default function TodayScreen() {
           {/* Header skeleton */}
           <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View>
-              <RNAnimated.View style={{ width: 200, height: 22, borderRadius: 8, backgroundColor: skeletonBase, opacity: pulseAnim, marginBottom: 6 }} />
-              <RNAnimated.View style={{ width: 130, height: 14, borderRadius: 6, backgroundColor: skeletonBase, opacity: pulseAnim }} />
+              <Animated.View style={[{ width: 200, height: 22, borderRadius: 8, backgroundColor: skeletonBase, marginBottom: 6 }, pulseStyle]} />
+              <Animated.View style={[{ width: 130, height: 14, borderRadius: 6, backgroundColor: skeletonBase }, pulseStyle]} />
             </View>
-            <RNAnimated.View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: skeletonBase, opacity: pulseAnim }} />
+            <Animated.View style={[{ width: 40, height: 40, borderRadius: 20, backgroundColor: skeletonBase }, pulseStyle]} />
           </View>
 
           {/* Verse hero card skeleton */}
           <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
-            <RNAnimated.View style={{ backgroundColor: isDark ? '#3A3028' : '#F2D99A', borderRadius: 24, padding: 24, opacity: pulseAnim, minHeight: 160 }}>
+            <Animated.View style={[{ backgroundColor: isDark ? '#3A3028' : '#F2D99A', borderRadius: 24, padding: 24, minHeight: 160 }, pulseStyle]}>
               <View style={{ width: 80, height: 10, borderRadius: 5, backgroundColor: isDark ? '#4A4030' : '#E8C97A', marginBottom: 14 }} />
               <View style={{ width: '100%', height: 14, borderRadius: 6, backgroundColor: isDark ? '#4A4030' : '#E8C97A', marginBottom: 8 }} />
               <View style={{ width: '90%', height: 14, borderRadius: 6, backgroundColor: isDark ? '#4A4030' : '#E8C97A', marginBottom: 8 }} />
@@ -160,12 +158,12 @@ export default function TodayScreen() {
                   <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? '#4A4030' : '#E8C97A' }} />
                 </View>
               </View>
-            </RNAnimated.View>
+            </Animated.View>
           </View>
 
           {/* Streak card skeleton */}
           <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
-            <RNAnimated.View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 20, opacity: pulseAnim, minHeight: 90 }}>
+            <Animated.View style={[{ backgroundColor: cardBg, borderRadius: 20, padding: 20, minHeight: 90 }, pulseStyle]}>
               <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
                 <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: skeletonBase }} />
                 <View style={{ flex: 1 }}>
@@ -173,27 +171,27 @@ export default function TodayScreen() {
                   <View style={{ width: 160, height: 10, borderRadius: 5, backgroundColor: skeletonBase }} />
                 </View>
               </View>
-            </RNAnimated.View>
+            </Animated.View>
           </View>
 
           {/* Prayer CTA skeleton */}
           <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
-            <RNAnimated.View style={{ backgroundColor: isDark ? '#3A3028' : '#FAE3D9', borderRadius: 20, padding: 20, opacity: pulseAnim, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            <Animated.View style={[{ backgroundColor: isDark ? '#3A3028' : '#FAE3D9', borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 16 }, pulseStyle]}>
               <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: isDark ? '#4A3830' : '#F0C8B8' }} />
               <View style={{ flex: 1 }}>
                 <View style={{ width: 140, height: 14, borderRadius: 6, backgroundColor: isDark ? '#4A3830' : '#F0C8B8', marginBottom: 8 }} />
                 <View style={{ width: 190, height: 10, borderRadius: 5, backgroundColor: isDark ? '#4A3830' : '#F0C8B8' }} />
               </View>
-            </RNAnimated.View>
+            </Animated.View>
           </View>
 
           {/* Gratitude skeleton */}
           <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
-            <RNAnimated.View style={{ backgroundColor: isDark ? '#2A3022' : '#E2EAE0', borderRadius: 20, padding: 20, opacity: pulseAnim, minHeight: 100 }}>
+            <Animated.View style={[{ backgroundColor: isDark ? '#2A3022' : '#E2EAE0', borderRadius: 20, padding: 20, minHeight: 100 }, pulseStyle]}>
               <View style={{ width: 120, height: 14, borderRadius: 6, backgroundColor: isDark ? '#3A4030' : '#C8D8C0', marginBottom: 14 }} />
               <View style={{ width: '100%', height: 10, borderRadius: 5, backgroundColor: isDark ? '#3A4030' : '#C8D8C0', marginBottom: 8 }} />
               <View style={{ width: '60%', height: 10, borderRadius: 5, backgroundColor: isDark ? '#3A4030' : '#C8D8C0' }} />
-            </RNAnimated.View>
+            </Animated.View>
           </View>
         </ScrollView>
       </SafeAreaView>
