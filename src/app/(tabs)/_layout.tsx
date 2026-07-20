@@ -1,8 +1,15 @@
 import { AppIcon, AppIconName } from "@/components/ui/AppIcon";
 import { useAppStore } from "@/store/app.store";
+import * as Haptics from "expo-haptics";
 import { Tabs } from "expo-router";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, Text, useColorScheme, View } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TabBarProps = {
@@ -10,6 +17,100 @@ type TabBarProps = {
   descriptors: Record<string, unknown>;
   navigation: any;
 };
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function TabItem({
+  routeKey,
+  focused,
+  isDark,
+  label,
+  iconName,
+  onPress,
+}: {
+  routeKey: string;
+  focused: boolean;
+  isDark: boolean;
+  label: string;
+  iconName: AppIconName;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(focused ? 1.04 : 1);
+
+  React.useEffect(() => {
+    scale.value = withSpring(focused ? 1.05 : 1, {
+      damping: 14,
+      stiffness: 220,
+    });
+  }, [focused, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const activeBg = "#F2B84B";
+  const inactiveIconColor = isDark ? "#A39785" : "#77766F";
+  const activeIconColor = "#1E1C18";
+
+  return (
+    <AnimatedPressable
+      key={routeKey}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={focused ? { selected: true } : {}}
+      style={[
+        {
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingVertical: 5,
+        },
+        animatedStyle,
+      ]}
+    >
+      <View
+        style={{
+          width: 42,
+          height: 28,
+          borderRadius: 14,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: focused ? activeBg : "transparent",
+          marginBottom: 2,
+          shadowColor: focused ? "#F2B84B" : "transparent",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: focused ? 0.3 : 0,
+          shadowRadius: 5,
+          elevation: focused ? 3 : 0,
+        }}
+      >
+        <AppIcon
+          name={iconName}
+          size={19}
+          color={focused ? activeIconColor : inactiveIconColor}
+          strokeWidth={focused ? 2.4 : 1.9}
+        />
+      </View>
+      <Text
+        style={{
+          fontFamily: focused ? "Inter_700Bold" : "Inter_500Medium",
+          fontSize: 10.5,
+          letterSpacing: 0.1,
+          color: focused
+            ? isDark
+              ? "#F5EDD8"
+              : "#1E1C18"
+            : isDark
+              ? "#8C8374"
+              : "#828079",
+        }}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </AnimatedPressable>
+  );
+}
 
 function DailyPrayerTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
@@ -27,94 +128,80 @@ function DailyPrayerTabBar({ state, navigation }: TabBarProps) {
     library: { label: t("tabs.library"), icon: "library" },
   };
 
+  const visibleRoutes = state.routes.filter(
+    (r) => r.name !== "widgets" && tabMeta[r.name],
+  );
+
   return (
     <View
+      pointerEvents="box-none"
       style={{
-        flexDirection: "row",
-        backgroundColor: isDark ? "#2A2720" : "#FFFFFF",
-        paddingBottom: Math.max(insets.bottom, 8),
-        paddingTop: 8,
-        borderTopWidth: 1,
-        borderTopColor: isDark
-          ? "rgba(245,237,216,0.08)"
-          : "rgba(41,43,40,0.08)",
-        shadowColor: "#292B28",
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 10,
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 12,
+        paddingBottom: Math.max(insets.bottom, 10),
+        backgroundColor: "transparent",
       }}
     >
-      {state.routes.map((route) => {
-        const focused =
-          state.index === state.routes.findIndex((r) => r.key === route.key);
-        const meta = tabMeta[route.name] ?? {
-          label: route.name,
-          icon: "grid" as AppIconName,
-        };
-        const iconColor = focused ? "#292B28" : isDark ? "#7A7264" : "#77766F";
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: isDark
+            ? "rgba(38, 35, 29, 0.96)"
+            : "rgba(255, 255, 255, 0.96)",
+          borderRadius: 26,
+          paddingHorizontal: 6,
+          paddingVertical: 5,
+          borderWidth: 1,
+          borderColor: isDark
+            ? "rgba(245, 237, 216, 0.12)"
+            : "rgba(41, 43, 40, 0.08)",
+          shadowColor: "#000000",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: isDark ? 0.35 : 0.12,
+          shadowRadius: 14,
+          elevation: 10,
+        }}
+      >
+        {visibleRoutes.map((route) => {
+          const focused =
+            state.index === state.routes.findIndex((r) => r.key === route.key);
+          const meta = tabMeta[route.name] ?? {
+            label: route.name,
+            icon: "grid" as AppIconName,
+          };
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+          const onPress = () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
+              () => {},
+            );
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true,
+            });
+            if (!focused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
 
-        return (
-          <Pressable
-            key={route.key}
-            onPress={onPress}
-            accessibilityRole="button"
-            accessibilityState={focused ? { selected: true } : {}}
-            style={{
-              flex: 1,
-              alignItems: "center",
-              gap: 4,
-              paddingVertical: 4,
-              minHeight: 48,
-            }}
-          >
-            <View
-              style={{
-                width: 36,
-                height: 28,
-                borderRadius: 14,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: focused ? "#F2B84B" : "transparent",
-              }}
-            >
-              <AppIcon
-                name={meta.icon}
-                size={19}
-                color={iconColor}
-                strokeWidth={focused ? 2.4 : 2}
-              />
-            </View>
-            <Text
-              style={{
-                fontFamily: focused ? "Inter_600SemiBold" : "Inter_400Regular",
-                fontSize: 10,
-                color: focused
-                  ? isDark
-                    ? "#F5EDD8"
-                    : "#292B28"
-                  : isDark
-                    ? "#7A7264"
-                    : "#77766F",
-              }}
-              numberOfLines={1}
-            >
-              {meta.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+          return (
+            <TabItem
+              key={route.key}
+              routeKey={route.key}
+              focused={focused}
+              isDark={isDark}
+              label={meta.label}
+              iconName={meta.icon}
+              onPress={onPress}
+            />
+          );
+        })}
+      </View>
     </View>
   );
 }

@@ -40,7 +40,7 @@ export default function PrayScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
         <Animated.View entering={FadeInDown.duration(400)} style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16 }}>
