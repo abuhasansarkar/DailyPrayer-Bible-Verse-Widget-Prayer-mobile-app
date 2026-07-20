@@ -1,4 +1,5 @@
 # DailyPrayer — Bible Verse Widget & Prayer
+
 ## Production-Ready Expo App — Implementation Plan
 
 ### Overview
@@ -42,24 +43,24 @@ Transform the current Expo v57 starter project (`c:\AbuHasan\Android\DailyPrayer
 
 ## Tech Stack Decisions
 
-| Concern | Choice | Rationale |
-|---|---|---|
-| Framework | Expo SDK 57 + Expo Router v4 | Already installed, file-based routing |
-| Styling | NativeWind v4 (Tailwind CSS) | Requested; utility-first, dark mode easy |
-| State | Zustand | Lightweight, typed, devtools support |
-| Server state | TanStack Query v5 | Caching, sync, suspense |
-| Forms | React Hook Form + Zod | Type-safe validation |
-| Local DB | expo-sqlite (Drizzle ORM) | Prisma doesn't run on RN device |
-| Cloud DB | Supabase PostgreSQL | Auth, sync, admin content |
-| Notifications | expo-notifications | Push + local scheduling |
-| Secure storage | expo-secure-store | Token/key storage |
-| Image picker | expo-image-picker | Widget photo backgrounds |
-| Sharing | expo-sharing | Verse image sharing |
-| Localization | expo-localization + i18next | Multi-language |
-| Subscriptions | RevenueCat | Cross-platform IAP |
-| Fonts | expo-font (Inter + Lora) | Warm editorial typography |
-| Icons | @expo/vector-icons + custom SVG | SF Symbols parity |
-| Build | EAS Build + EAS Update | CI/CD |
+| Concern        | Choice                          | Rationale                                |
+| -------------- | ------------------------------- | ---------------------------------------- |
+| Framework      | Expo SDK 57 + Expo Router v4    | Already installed, file-based routing    |
+| Styling        | NativeWind v4 (Tailwind CSS)    | Requested; utility-first, dark mode easy |
+| State          | Zustand                         | Lightweight, typed, devtools support     |
+| Server state   | TanStack Query v5               | Caching, sync, suspense                  |
+| Forms          | React Hook Form + Zod           | Type-safe validation                     |
+| Local DB       | expo-sqlite (Drizzle ORM)       | Prisma doesn't run on RN device          |
+| Cloud DB       | Supabase PostgreSQL             | Auth, sync, admin content                |
+| Notifications  | expo-notifications              | Push + local scheduling                  |
+| Secure storage | expo-secure-store               | Token/key storage                        |
+| Image picker   | expo-image-picker               | Widget photo backgrounds                 |
+| Sharing        | expo-sharing                    | Verse image sharing                      |
+| Localization   | expo-localization + i18next     | Multi-language                           |
+| Subscriptions  | RevenueCat                      | Cross-platform IAP                       |
+| Fonts          | expo-font (Inter + Lora)        | Warm editorial typography                |
+| Icons          | @expo/vector-icons + custom SVG | SF Symbols parity                        |
+| Build          | EAS Build + EAS Update          | CI/CD                                    |
 
 ---
 
@@ -68,7 +69,9 @@ Transform the current Expo v57 starter project (`c:\AbuHasan\Android\DailyPrayer
 ### Phase 1 — Foundation & Design System
 
 #### [MODIFY] [package.json](file:///c:/AbuHasan/Android/DailyPrayer/app/package.json)
+
 Add all required dependencies:
+
 - `nativewind`, `tailwindcss`
 - `@tanstack/react-query`
 - `zustand`
@@ -90,6 +93,7 @@ Add all required dependencies:
 - `expo-av` (for ambient audio)
 
 #### [MODIFY] [app.json](file:///c:/AbuHasan/Android/DailyPrayer/app/app.json)
+
 - Rename app to "DailyPrayer", slug to "dailyprayer"
 - Update scheme to `dailyprayer`
 - Update icon/splash to DailyPrayer brand
@@ -98,7 +102,9 @@ Add all required dependencies:
 - Add `bundleIdentifier` for iOS and `package` for Android
 
 #### [NEW] `tailwind.config.js`
+
 Full DailyPrayer design token configuration:
+
 ```js
 // Brand colors, spacing scale, font families, border radius tokens
 theme.extend.colors = {
@@ -112,12 +118,15 @@ theme.extend.colors = {
 ```
 
 #### [NEW] `babel.config.js`
+
 Configure NativeWind v4 Babel preset.
 
 #### [MODIFY] [`src/global.css`](file:///c:/AbuHasan/Android/DailyPrayer/app/src/global.css)
+
 Add full DailyPrayer NativeWind CSS with font imports, base tokens, and dark mode support.
 
 #### [MODIFY] [`src/constants/theme.ts`](file:///c:/AbuHasan/Android/DailyPrayer/app/src/constants/theme.ts)
+
 Replace with complete DailyPrayer design tokens (colors, spacing, radii, shadows, typography scale).
 
 ---
@@ -232,7 +241,9 @@ src/
 ### Phase 3 — Database Schema (Drizzle + SQLite)
 
 #### [NEW] `src/db/schema.ts`
+
 Core tables:
+
 - `verses` — id, reference, text, translation, book, chapter, verse_number, topics[]
 - `prayers` — id, title, body, category, scripture_ref, duration_minutes, is_guided, is_premium
 - `topics` — id, name, slug, icon, description, color
@@ -245,6 +256,7 @@ Core tables:
 - `widget_themes` — id, name, bg_color, text_color, accent, illustration
 
 #### [NEW] `prisma/schema.prisma` (server-side only)
+
 Mirrors the above for Supabase PostgreSQL — used only for migrations from Node.js, not on-device.
 
 ---
@@ -252,7 +264,9 @@ Mirrors the above for Supabase PostgreSQL — used only for migrations from Node
 ### Phase 4 — Navigation & Layouts
 
 #### [MODIFY] [`src/app/_layout.tsx`](file:///c:/AbuHasan/Android/DailyPrayer/app/src/app/_layout.tsx)
+
 Root layout wraps:
+
 1. `QueryClientProvider` (TanStack Query)
 2. `GestureHandlerRootView`
 3. `SafeAreaProvider`
@@ -262,10 +276,13 @@ Root layout wraps:
 7. Onboarding gate (redirect to `/(onboarding)/welcome` if first launch)
 
 #### [NEW] `src/app/(onboarding)/_layout.tsx`
+
 Stack navigator, no tab bar, cream background.
 
 #### [NEW] `src/app/(tabs)/_layout.tsx`
+
 Five-tab navigator: **Today · Explore · Pray · Widgets · Library**
+
 - Custom animated tab bar using `BottomTabBar` with DailyPrayer icons
 - Badge count on Pray tab for pending reminders
 
@@ -274,6 +291,7 @@ Five-tab navigator: **Today · Explore · Pray · Widgets · Library**
 ### Phase 5 — Core Screens (30 High-Fidelity)
 
 #### Onboarding Flow (7 screens)
+
 1. **Splash** — Logo animation on cream, mascot rises, fade to welcome
 2. **Welcome** — "A quiet moment with God, every day" + mascot greeting pose
 3. **Spiritual Goals** — Card grid: Morning devotion, Evening reflection, Bible reading, Prayer, Gratitude
@@ -283,13 +301,16 @@ Five-tab navigator: **Today · Explore · Pray · Widgets · Library**
 7. **Plan Ready** — Mascot celebrating, personalization complete
 
 #### Today Tab (home)
+
 8. **Today Home** — Personalized greeting, date, hero verse card, reflection prompt, streak, gratitude entry, mascot encouragement widget
 
 #### Verse Experience
+
 9. **Verse of the Day** — Full-screen hero verse with save/share/audio actions
 10. **Verse Detail** — Verse, reflection text, related verses, prayer, topics
 
 #### Prayer Experience
+
 11. **Prayer Home (Pray tab)** — Category grid, prayer journal, gratitude, reminders list
 12. **Prayer Category** — List of guided prayers in a category
 13. **Guided Prayer Detail** — Title, intro, prayer text, scripture, "Mark Prayed" CTA
@@ -298,6 +319,7 @@ Five-tab navigator: **Today · Explore · Pray · Widgets · Library**
 16. **Gratitude Journal** — 3 gratitude prompts + entry history
 
 #### Bible / Explore
+
 17. **Explore Home** — Search bar, topic chips, featured collections, daily devotional
 18. **Topic Detail** — Verses, prayers, devotionals for a topic
 19. **Scripture Search Results** — Verse list with highlight
@@ -305,20 +327,24 @@ Five-tab navigator: **Today · Explore · Pray · Widgets · Library**
 21. **Chapter Reader** — Full chapter with verse highlighting + save
 
 #### Widgets
+
 22. **Widget Gallery** — Size categories (small/medium/large/lock screen)
 23. **Widget Theme Detail** — Preview + 20 theme cards
 24. **Widget Customizer** — Live preview panel + font/color/content controls
 25. **Widget Installation Guide** — Step-by-step iOS/Android instructions
 
 #### Library
+
 26. **Favorites** — Verse, prayer, devotional tabs
 27. **Collections** — Grid + create collection CTA
 28. **Saved Prayers** — Personal prayer list
 
 #### Settings & Profile
+
 29. **Profile & Settings** — Avatar, name, streak summary, notifications, appearance, translation, accessibility, privacy, subscription
 
 #### Premium
+
 30. **Premium Paywall** — Monthly vs. Annual plan, free trial, feature list, mascot premium pose
 
 ---
@@ -326,12 +352,14 @@ Five-tab navigator: **Today · Explore · Pray · Widgets · Library**
 ### Phase 6 — Streaks & Achievements
 
 #### [NEW] `src/components/streak/StreakCard.tsx`
+
 - Shows current streak count, longest streak
 - Weekly activity calendar (7-day row)
 - Animated progress ring
 - Encouraging messaging (never guilt-language)
 
 #### [NEW] Milestone illustrations for 3, 7, 14, 30, 50, 100, 365 days
+
 - Generated as SVG assets using the image generation tool
 - Mascot in "celebrating" pose per milestone
 
@@ -340,6 +368,7 @@ Five-tab navigator: **Today · Explore · Pray · Widgets · Library**
 ### Phase 7 — Notifications
 
 #### [NEW] `src/services/notifications.ts`
+
 - Register for push permissions (expo-notifications)
 - Schedule local notifications for morning/evening/custom reminders
 - Handle timezone shifts for reminder times
@@ -351,6 +380,7 @@ Five-tab navigator: **Today · Explore · Pray · Widgets · Library**
 ### Phase 8 — Widgets
 
 #### In-App Widget System (Preview + Install Guide)
+
 Widget home-screen features require a **development build** (`expo-dev-client`). The plan delivers:
 
 1. **In-app widget preview** — pixel-accurate React Native renderings of all widget sizes/themes
@@ -366,6 +396,7 @@ Widget home-screen features require a **development build** (`expo-dev-client`).
 ### Phase 9 — Subscription (RevenueCat)
 
 #### [NEW] `src/services/revenuecat.ts`
+
 - Initialize with platform-specific API keys
 - Fetch available packages (monthly, annual, lifetime)
 - Purchase flow with loading/error states
@@ -373,6 +404,7 @@ Widget home-screen features require a **development build** (`expo-dev-client`).
 - Entitlement check hook: `useSubscription()`
 
 #### [NEW] `src/app/premium/index.tsx`
+
 - Full-width paywall with mascot "premium" pose
 - Feature comparison (Free vs. Premium)
 - Monthly / Annual toggle with savings badge
@@ -385,13 +417,16 @@ Widget home-screen features require a **development build** (`expo-dev-client`).
 ### Phase 10 — Cloud Sync (Supabase)
 
 #### [NEW] `src/services/supabase.ts`
+
 Supabase client with:
+
 - Anonymous auth (guest) + optional email auth
 - Sync queue: favorites, journal entries, reminders, streak log, user preferences
 - Conflict resolution: last-write-wins with `updated_at` timestamp
 - Offline-first: changes written to SQLite first, synced when online
 
 #### Supabase Tables (server-side)
+
 - `users` — id, display_name, avatar_url, created_at
 - `user_preferences` — user_id, translation, theme, goals[], reminders[]
 - `sync_favorites` — user_id, type, ref_id, synced_at
@@ -407,6 +442,7 @@ Supabase client with:
 ### Phase 11 — Internationalization
 
 #### [NEW] `src/i18n/index.ts`
+
 - i18next + react-i18next
 - expo-localization for device locale detection
 - Namespaces: `common`, `onboarding`, `verse`, `prayer`, `streak`, `settings`
@@ -417,43 +453,48 @@ Supabase client with:
 ### Phase 12 — Design System Completion
 
 #### Color Tokens (Light Theme)
-| Token | Value |
-|---|---|
-| `--color-bg` | `#FFF9EE` (Warm Cream) |
-| `--color-surface` | `#F1E6D3` (Natural Beige) |
-| `--color-brand` | `#F2B84B` (Morning Gold) |
-| `--color-accent` | `#D98262` (Soft Terracotta) |
-| `--color-growth` | `#96AA88` (Gentle Sage) |
-| `--color-text` | `#292B28` (Deep Charcoal) |
-| `--color-text-secondary` | `#77766F` (Warm Gray) |
+
+| Token                    | Value                       |
+| ------------------------ | --------------------------- |
+| `--color-bg`             | `#FFF9EE` (Warm Cream)      |
+| `--color-surface`        | `#F1E6D3` (Natural Beige)   |
+| `--color-brand`          | `#F2B84B` (Morning Gold)    |
+| `--color-accent`         | `#D98262` (Soft Terracotta) |
+| `--color-growth`         | `#96AA88` (Gentle Sage)     |
+| `--color-text`           | `#292B28` (Deep Charcoal)   |
+| `--color-text-secondary` | `#77766F` (Warm Gray)       |
 
 #### Dark Theme
-| Token | Value |
-|---|---|
-| `--color-bg` | `#1E1C18` (Deep Charcoal warm) |
-| `--color-surface` | `#2A2720` (Dark Olive) |
-| `--color-brand` | `#F2B84B` (Gold unchanged) |
-| `--color-text` | `#F5EDD8` (Soft Cream) |
+
+| Token             | Value                          |
+| ----------------- | ------------------------------ |
+| `--color-bg`      | `#1E1C18` (Deep Charcoal warm) |
+| `--color-surface` | `#2A2720` (Dark Olive)         |
+| `--color-brand`   | `#F2B84B` (Gold unchanged)     |
+| `--color-text`    | `#F5EDD8` (Soft Cream)         |
 
 #### Typography Scale
-| Style | Font | Size | Weight |
-|---|---|---|---|
-| Display Large | Inter | 36sp | 700 |
-| Headline | Inter | 24sp | 600 |
-| Body Large | Inter | 17sp | 400 |
-| Scripture Large | Lora | 22sp | 400 italic |
-| Prayer Body | Lora | 18sp | 400 |
-| Caption | Inter | 12sp | 400 |
+
+| Style           | Font  | Size | Weight     |
+| --------------- | ----- | ---- | ---------- |
+| Display Large   | Inter | 36sp | 700        |
+| Headline        | Inter | 24sp | 600        |
+| Body Large      | Inter | 17sp | 400        |
+| Scripture Large | Lora  | 22sp | 400 italic |
+| Prayer Body     | Lora  | 18sp | 400        |
+| Caption         | Inter | 12sp | 400        |
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
+
 - `npx expo lint` — TypeScript + ESLint
 - `npx jest` — Unit tests for Zustand stores, Zod schemas, date utilities, streak logic
 
 ### Manual Verification
+
 1. Run `expo start` → scan with Expo Go → verify home screen renders with DailyPrayer theme
 2. Navigate all 5 tabs — confirm tab bar labels and icons
 3. Complete onboarding flow — confirm Zustand stores persist
@@ -466,10 +507,12 @@ Supabase client with:
 10. Kill app, reopen → verify streak increments on next day
 
 ### EAS Build Verification
+
 ```bash
 eas build --profile development --platform android
 eas build --profile development --platform ios
 ```
+
 Confirm dev client boots and all native modules initialize.
 
 ---

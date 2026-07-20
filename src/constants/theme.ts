@@ -22,7 +22,10 @@ export const Colors = {
   light: {
     // Backgrounds
     bg: '#FFF9EE',
+    background: '#FFF9EE',
     surface: '#F1E6D3',
+    backgroundElement: '#F1E6D3',
+    backgroundSelected: '#FFFFFF',
     elevated: '#FFFFFF',
     // Brand
     brand: '#F2B84B',
@@ -54,7 +57,10 @@ export const Colors = {
   dark: {
     // Backgrounds
     bg: '#1E1C18',
+    background: '#1E1C18',
     surface: '#2A2720',
+    backgroundElement: '#2A2720',
+    backgroundSelected: '#332F26',
     elevated: '#332F26',
     // Brand
     brand: '#F2B84B',
@@ -86,6 +92,7 @@ export const Colors = {
 } as const;
 
 export type ThemeColors = typeof Colors.light;
+export type ThemeColor = keyof typeof Colors.light;
 export type ColorScheme = 'light' | 'dark';
 
 // ── Typography ────────────────────────────────────────────────────────────────
@@ -118,6 +125,12 @@ export const FontFamily = Platform.select({
     serifMedium: 'Georgia',
   },
 })!;
+
+export const Fonts = {
+  sans: FontFamily.sans,
+  serif: FontFamily.serif,
+  mono: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+} as const;
 
 export const FontSize = {
   displayLg: 36,
@@ -171,18 +184,30 @@ export const LineHeight = {
 
 // ── Spacing (4pt grid) ────────────────────────────────────────────────────────
 export const Spacing = {
-  0.5: 2,
-  1: 4,
-  2: 8,
-  3: 12,
-  4: 16,
-  5: 20,
-  6: 24,
-  8: 32,
-  10: 40,
-  12: 48,
-  16: 64,
-  20: 80,
+  half: 2,
+  one: 4,
+  two: 8,
+  three: 12,
+  four: 16,
+  five: 20,
+  six: 24,
+  eight: 32,
+  ten: 40,
+  twelve: 48,
+  sixteen: 64,
+  twenty: 80,
+  xxs: 2,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  base: 16,
+  lg: 20,
+  xl: 24,
+  '2xl': 32,
+  '3xl': 40,
+  '4xl': 48,
+  '6xl': 64,
+  '8xl': 80,
 } as const;
 
 // ── Border Radius ─────────────────────────────────────────────────────────────
@@ -249,3 +274,5 @@ export const Layout = {
   tabBarHeight: Platform.select({ ios: 83, android: 80 }) ?? 80,
   headerHeight: Platform.select({ ios: 44, android: 56 }) ?? 56,
 } as const;
+
+export const MaxContentWidth = Layout.maxContentWidth;

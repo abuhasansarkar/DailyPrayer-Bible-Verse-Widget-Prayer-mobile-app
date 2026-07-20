@@ -39,9 +39,13 @@
       "signIn": "J'ai déjà un compte"
     },
     "goals": {
-      "title": "Qu'espérez-vous\nachievoir?",
-      "subtitle": "Choisissez ce qui vous importe le plus en ce moment.",
+      "title": "Qu'espérez-vous\naccomplir?",
+      "subtitle": "Choisissez ce qui compte le plus pour vous en ce moment.",
       "helperText": "Vous pouvez toujours modifier cela plus tard."
+    },
+    "translation": {
+      "title": "Choisissez votre\ntraduction de la Bible",
+      "subtitle": "Vous pouvez changer cela à tout moment dans les paramètres."
     },
     "reminder": {
       "title": "Quand aimeriez-vous\nêtre rappelé?",
@@ -50,6 +54,12 @@
       "evening": "Soir",
       "custom": "Heure personnalisée",
       "skip": "Je configurerai cela plus tard"
+    },
+    "theme": {
+      "title": "Choisissez votre\napparence",
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Par défaut"
     },
     "ready": {
       "title": "Vous êtes prêt.",
@@ -70,14 +80,176 @@
     "streak": "Constance de Foi",
     "gratitude": "Pour quoi êtes-vous reconnaissant aujourd'hui?",
     "gratitudePlaceholder": "Écrivez quelque chose...",
-    "mascotMessage": "Chaque moment de foi compte."
+    "mascotMessage": "Chaque moment de foi compte.",
+    "continueReading": "Continuer la lecture",
+    "todayReminder": "Rappel du jour"
+  },
+  "verse": {
+    "reference": "Référence",
+    "save": "Enregistrer le verset",
+    "saved": "Enregistré",
+    "share": "Partager",
+    "reflection": "Réflexion",
+    "relatedVerses": "Versets connexes",
+    "prayer": "Prière",
+    "translation": "Traduction",
+    "copyText": "Copier le texte",
+    "copied": "Copié !",
+    "createImage": "Créer une image"
+  },
+  "prayer": {
+    "title": "Prière",
+    "guidedPrayers": "Prières guidées",
+    "myPrayers": "Mes prières",
+    "categories": {
+      "morning": "Matin",
+      "evening": "Soir",
+      "gratitude": "Gratitude",
+      "peace": "Paix",
+      "anxiety": "Anxiété",
+      "strength": "Force",
+      "healing": "Guérison",
+      "family": "Famille",
+      "relationships": "Relations",
+      "forgiveness": "Pardon",
+      "guidance": "Orientation",
+      "protection": "Protection",
+      "work": "Travail",
+      "sleep": "Sommeil",
+      "difficult-times": "Temps difficiles",
+      "personal": "Personnel"
+    },
+    "markPrayed": "Marquer comme prié",
+    "prayed": "Prié",
+    "addReminder": "Ajouter un rappel",
+    "writeReflection": "Écrire une réflexion...",
+    "minuteRead": "{{minutes}} min",
+    "newPrayer": "Nouvelle prière",
+    "prayerTitle": "Titre de la prière",
+    "prayerBody": "Écrivez votre prière...",
+    "answeredPrayers": "Prières exaucées",
+    "markAnswered": "Marquer comme exaucée",
+    "emptyState": {
+      "title": "Aucune prière pour le moment",
+      "subtitle": "Commencez votre journal de prière aujourd'hui.",
+      "cta": "Écrire une prière"
+    }
+  },
+  "streak": {
+    "days": "{{count}} jours",
+    "day": "{{count}} jour",
+    "current": "Série actuelle",
+    "longest": "Plus longue série",
+    "totalDays": "Jours totaux",
+    "thisWeek": "Cette semaine",
+    "keepGoing": "Continuez !",
+    "welcome_back": "Bon retour.",
+    "new_beginning": "Chaque jour est un nouveau départ.",
+    "small_step": "Un petit moment de foi est précieux.",
+    "milestones": {
+      "title": "Vous avez atteint {{days}} jours !",
+      "share": "Partager cette étape"
+    }
+  },
+  "journal": {
+    "title": "Journal",
+    "gratitude": "Gratitude",
+    "reflection": "Réflexion",
+    "newEntry": "Nouvelle entrée",
+    "editEntry": "Modifier l'entrée",
+    "mood": "Comment vous sentez-vous ?",
+    "tags": "Tags",
+    "private": "Entrée privée",
+    "emptyState": {
+      "title": "Votre journal est vide",
+      "subtitle": "Commencez à capturer votre voyage spirituel.",
+      "cta": "Écrire la première entrée"
+    }
+  },
+  "explore": {
+    "title": "Explorer",
+    "search": "Rechercher des Écritures...",
+    "topics": "Thèmes",
+    "featured": "Collections en vedette",
+    "devotionals": "Dévotionnels",
+    "bibleBooks": "Livres de la Bible",
+    "oldTestament": "Ancien Testament",
+    "newTestament": "Nouveau Testament"
+  },
+  "widgets": {
+    "title": "Widgets",
+    "subtitle": "Ajoutez des Écritures à votre écran d'accueil",
+    "gallery": "Galerie de widgets",
+    "customize": "Personnaliser",
+    "preview": "Aperçu",
+    "install": "Comment installer",
+    "themes": "Thèmes",
+    "size": {
+      "small": "Petit",
+      "medium": "Moyen",
+      "large": "Grand",
+      "lockscreen": "Écran de verrouillage"
+    },
+    "content": {
+      "daily-verse": "Verset du jour",
+      "favorite-verse": "Verset favori",
+      "daily-prayer": "Prière du jour",
+      "streak": "Constance de foi",
+      "morning-devotion": "Dévotion du matin",
+      "evening-reflection": "Réflexion du soir"
+    },
+    "premiumRequired": "Premium requis pour ce thème"
+  },
+  "library": {
+    "title": "Bibliothèque",
+    "favorites": "Favoris",
+    "collections": "Collections",
+    "history": "Historique",
+    "savedPrayers": "Prières enregistrées",
+    "createCollection": "Créer une collection",
+    "emptyFavorites": {
+      "title": "Aucun favori pour le moment",
+      "subtitle": "Appuyez sur le marque-page d'un verset ou d'une prière pour l'enregistrer ici."
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "profile": "Profil",
+    "notifications": "Notifications",
+    "appearance": "Apparence",
+    "translation": "Traduction de la Bible",
+    "language": "Langue",
+    "privacy": "Confidentialité",
+    "accessibility": "Accessibilité",
+    "subscription": "Abonnement",
+    "help": "Aide & Support",
+    "about": "À propos de DailyPrayer",
+    "version": "Version {{version}}",
+    "rateApp": "Évaluer l'application",
+    "reportBug": "Signaler un problème",
+    "signOut": "Se déconnecter"
   },
   "premium": {
     "title": "DailyPrayer Premium",
     "subtitle": "Approfondissez votre voyage spirituel quotidien",
+    "features": {
+      "allThemes": "Tous les thèmes de widgets",
+      "customPhoto": "Fonds d'écran avec vos photos",
+      "unlimitedReminders": "Rappels illimités",
+      "unlimitedFavorites": "Favoris illimités",
+      "collections": "Collections personnalisées",
+      "prayerLibrary": "Bibliothèque de prières complète",
+      "devotionals": "Bibliothèque de dévotionnels complète",
+      "shareTemplates": "Modèles de partage avancés",
+      "offline": "Accès hors ligne",
+      "cloudSync": "Synchronisation cloud",
+      "noAds": "Sans publicité",
+      "noWatermark": "Sans filigrane"
+    },
     "monthly": "Mensuel",
     "annual": "Annuel",
     "lifetime": "À vie",
+    "trial": "Commencer l'essai gratuit de {{days}} jours",
     "subscribe": "S'abonner",
     "restore": "Restaurer les achats",
     "termsNote": "Annulez à tout moment. Voir les Conditions et la Politique de confidentialité."
@@ -90,6 +262,10 @@
     "general": {
       "title": "Une erreur s'est produite",
       "subtitle": "Nous n'avons pas pu effectuer cette action. Veuillez réessayer."
+    },
+    "notFound": {
+      "title": "Contenu non trouvé",
+      "subtitle": "Cet élément a peut-être été supprimé."
     }
   }
 }

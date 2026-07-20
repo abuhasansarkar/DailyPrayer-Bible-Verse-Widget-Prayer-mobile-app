@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, useColorScheme, StatusBar } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -24,7 +24,9 @@ import { seedDatabase } from '@/db/seed';
 import { initI18n } from '@/i18n';
 import { initRevenueCat } from '@/services/revenuecat';
 import { requestNotificationPermission, syncRemindersFromDb } from '@/services/notifications';
+import { ensureAuth, runFullSync } from '@/services/supabase';
 import { useAppStore } from '@/store/app.store';
+import { useUserStore } from '@/store/user.store';
 
 import '@/global.css';
 
@@ -47,6 +49,7 @@ export default function RootLayout() {
   const systemColorScheme = useColorScheme();
   const { colorScheme, setDbReady, setOnboardingComplete } = useAppStore();
   const [appIsReady, setAppIsReady] = useState(false);
+  const notifListenerRef = useRef<any>(null);
 
   // Load fonts from standard font packages
   const [fontsLoaded] = useFonts({
@@ -76,39 +79,110 @@ export default function RootLayout() {
           onboarding_complete: number;
           app_theme: string;
           preferred_translation: string;
-          goals: string;
+          language: string;
+          display_name: string;
         }>('SELECT * FROM user_preferences WHERE id = 1');
 
         if (prefs) {
           setOnboardingComplete(prefs.onboarding_complete === 1);
+          if (prefs.app_theme) {
+            useAppStore.getState().setColorScheme(prefs.app_theme as any);
+          }
+          if (prefs.language) {
+            useAppStore.getState().updatePreferences({ language: prefs.language });
+            const i18n = (await import('@/i18n')).default;
+            await i18n.changeLanguage(prefs.language);
+          }
+          if (prefs.preferred_translation) {
+            useAppStore.getState().updatePreferences({ preferredTranslation: prefs.preferred_translation as any });
+          }
+          if (prefs.display_name) {
+            useUserStore.getState().setProfile(prefs.display_name);
+          }
         }
 
-        // 4. Init RevenueCat (non-blocking)
+        // 4. Load streak and favorites from DB
+        await useUserStore.getState().loadUserDataFromDb();
+
+        // 5. Init RevenueCat (non-blocking)
         initRevenueCat().catch(console.warn);
 
-        // 5. Request notification permission + sync reminders
+        // 6. Request notification permission + sync reminders
         const hasPermission = await requestNotificationPermission();
         if (hasPermission && prefs?.onboarding_complete) {
           syncRemindersFromDb().catch(console.warn);
         }
+
+        // 7. Supabase anonymous auth + background sync (non-blocking)
+        ensureAuth().catch(console.warn);
+        if (prefs?.onboarding_complete) {
+          runFullSync().catch(console.warn);
+        }
+
+        // 8. Set up notification tap deep-link handler
+        try {
+          const Constants = (await import('expo-constants')).default;
+          const { ExecutionEnvironment } = await import('expo-constants');
+          const isExpoGo =
+            Constants.appOwnership === 'expo' ||
+            Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+          if (!isExpoGo) {
+            const Notifications = require('expo-notifications');
+            if (Notifications && typeof Notifications.addNotificationResponseReceivedListener === 'function') {
+              notifListenerRef.current = Notifications.addNotificationResponseReceivedListener(
+                (response: any) => {
+                  const data = response.notification.request.content.data;
+                  if (data?.type === 'verse' && data?.verseId) {
+                    router.push(`/verse/${data.verseId}`);
+                  } else if (data?.type === 'prayer' || data?.reminderId) {
+                    router.push('/(tabs)/pray');
+                  } else if (data?.type === 'gratitude') {
+                    router.push('/gratitude');
+                  } else {
+                    router.push('/(tabs)');
+                  }
+                }
+              );
+            }
+          }
+        } catch {
+          // Notifications deep-link not available in Expo Go
+        }
       } catch (e) {
         console.error('[RootLayout] Initialization error:', e);
       } finally {
+        // Hide splash screen here — all data is loaded, redirect destination is known.
+        // This prevents the onboarding flash race condition for returning users.
+        await SplashScreen.hideAsync().catch(() => {});
         setAppIsReady(true);
       }
     }
 
     prepare();
+
+    return () => {
+      // Clean up notification listener on unmount
+      if (notifListenerRef.current) {
+        try {
+          const Notifications = require('expo-notifications');
+          Notifications.removeNotificationSubscription(notifListenerRef.current);
+        } catch { /* noop */ }
+      }
+    };
   }, []);
 
-  const onLayoutRootView = useCallback(async () => {
-    if (appIsReady) {
-      await SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [appIsReady]);
-
-  if (!appIsReady) {
-    return null;
+  // While initializing: render a splash-colored placeholder so there is never
+  // a blank white/dark frame between the native splash and the app content.
+  if (!appIsReady || !fontsLoaded) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: systemColorScheme === 'dark' ? '#1E1C18' : '#FFF9EE',
+        }}
+      />
+    );
   }
 
   // Determine resolved theme
@@ -122,33 +196,53 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <View
             className={isDark ? 'flex-1 bg-bg-dark' : 'flex-1 bg-cream'}
-            onLayout={onLayoutRootView}
           >
             <StatusBar
               barStyle={isDark ? 'light-content' : 'dark-content'}
               backgroundColor={isDark ? '#1E1C18' : '#FFF9EE'}
             />
             <Stack screenOptions={{ headerShown: false }}>
+              {/* Root redirect — routes to onboarding or tabs */}
               <Stack.Screen name="index" />
-              <Stack.Screen name="explore" />
+              {/* Onboarding group */}
               <Stack.Screen name="(onboarding)" />
+              {/* Main tabs */}
               <Stack.Screen name="(tabs)" />
+              {/* Verse */}
               <Stack.Screen name="verse/[id]" />
+              {/* Prayer */}
               <Stack.Screen name="prayer/[id]" />
+              <Stack.Screen name="prayer/category/[cat]" />
+              {/* Journal */}
               <Stack.Screen name="journal/new" />
               <Stack.Screen name="journal/[id]" />
+              {/* Gratitude history */}
+              <Stack.Screen name="gratitude/index" />
+              {/* Bible */}
+              <Stack.Screen name="bible/index" />
               <Stack.Screen name="bible/[book]/[chapter]" />
+              {/* Search */}
+              <Stack.Screen name="search" options={{ presentation: 'modal' }} />
+              {/* Topic */}
               <Stack.Screen name="topic/[id]" />
+              {/* Collection */}
               <Stack.Screen name="collection/[id]" />
+              {/* Widget */}
+              <Stack.Screen name="widget/install" />
+              <Stack.Screen name="widget/themes" />
               <Stack.Screen
                 name="widget/[id]/customize"
                 options={{ presentation: 'modal' }}
               />
+              {/* Premium */}
               <Stack.Screen
                 name="premium/index"
                 options={{ presentation: 'modal' }}
               />
+              {/* Settings */}
               <Stack.Screen name="settings/index" />
+              {/* Catch-all unmatched route handler */}
+              <Stack.Screen name="+not-found" />
             </Stack>
           </View>
         </QueryClientProvider>

@@ -55,7 +55,7 @@ export default function LibraryScreen() {
             <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 28, color: textPrimary, letterSpacing: -0.5 }}>
               {t('library.title')}
             </Text>
-            <Pressable onPress={() => router.push('/settings/')}>
+            <Pressable onPress={() => router.push('/settings')}>
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 18 }}>⚙️</Text>
               </View>

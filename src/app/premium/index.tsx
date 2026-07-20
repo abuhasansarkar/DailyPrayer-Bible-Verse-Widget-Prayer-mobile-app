@@ -7,6 +7,8 @@ import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
 import { useSubscriptionStore } from '@/store/subscription.store';
 import { purchasePackage, restorePurchases } from '@/services/revenuecat';
+import { Mascot } from '@/components/mascot/Mascot';
+import { Button } from '@/components/ui/Button';
 
 const FREE_FEATURES = [
   'Daily Bible verse',
@@ -86,16 +88,14 @@ export default function PremiumScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
         {/* Hero */}
-        <Animated.View entering={FadeIn.duration(500)} style={{ alignItems: 'center', marginTop: 16, marginBottom: 28 }}>
-          <View style={{ width: 88, height: 88, borderRadius: 28, backgroundColor: '#F2B84B', alignItems: 'center', justifyContent: 'center', marginBottom: 16, shadowColor: '#F2B84B', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 8 }}>
-            <Text style={{ fontSize: 44 }}>⭐</Text>
-          </View>
-          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 26, color: textPrimary, textAlign: 'center', letterSpacing: -0.5, marginBottom: 8 }}>
+        <Animated.View entering={FadeIn.duration(500)} style={{ alignItems: 'center', marginTop: 8, marginBottom: 24 }}>
+          <Mascot pose="premium" size={130} />
+          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 26, color: textPrimary, textAlign: 'center', letterSpacing: -0.5, marginTop: 12, marginBottom: 6 }}>
             {t('premium.title')}
           </Text>
-          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: textSecondary, textAlign: 'center' }}>
+          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: textSecondary, textAlign: 'center' }}>
             {t('premium.subtitle')}
           </Text>
         </Animated.View>
@@ -163,20 +163,13 @@ export default function PremiumScreen() {
         backgroundColor: bg, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(245,237,216,0.07)' : 'rgba(41,43,40,0.07)',
         gap: 8,
       }}>
-        <Pressable
+        <Button
+          title={purchasing ? 'Processing...' : selectedPkg?.introductoryOffer ? t('premium.trial', { days: 7 }) : t('premium.subscribe')}
           onPress={handlePurchase}
-          disabled={purchasing || isLoading}
-          style={{
-            height: 56, borderRadius: 20,
-            backgroundColor: purchasing ? '#F2B84B80' : '#F2B84B',
-            alignItems: 'center', justifyContent: 'center',
-            shadowColor: '#F2B84B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
-          }}
-        >
-          <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: '#292B28' }}>
-            {purchasing ? 'Processing...' : selectedPkg?.introductoryOffer ? t('premium.trial', { days: 7 }) : t('premium.subscribe')}
-          </Text>
-        </Pressable>
+          loading={purchasing || isLoading}
+          size="lg"
+          variant="primary"
+        />
 
         <Pressable onPress={handleRestore} style={{ alignItems: 'center', paddingVertical: 8 }}>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: textSecondary }}>{t('premium.restore')}</Text>
@@ -189,3 +182,4 @@ export default function PremiumScreen() {
     </SafeAreaView>
   );
 }
+

@@ -104,7 +104,7 @@ export default function WidgetsScreen() {
             <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 18, color: textPrimary }}>
               Premium Themes
             </Text>
-            <Pressable onPress={() => router.push('/premium/')}>
+            <Pressable onPress={() => router.push('/premium')}>
               <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#F2B84B' }}>{t('common.upgrade')} →</Text>
             </Pressable>
           </View>
@@ -112,7 +112,7 @@ export default function WidgetsScreen() {
             {premiumThemes.slice(0, 8).map((theme) => (
               <Pressable
                 key={theme.id}
-                onPress={() => router.push('/premium/')}
+                onPress={() => router.push('/premium')}
                 style={{
                   width: 140, height: 100, borderRadius: 16,
                   backgroundColor: theme.bgColor,
@@ -138,6 +138,7 @@ export default function WidgetsScreen() {
         {/* Install guide CTA */}
         <Animated.View entering={FadeInDown.duration(400).delay(400)} style={{ paddingHorizontal: 20, marginTop: 24 }}>
           <Pressable
+            onPress={() => router.push('/widget/install')}
             style={{
               backgroundColor: surfaceBg, borderRadius: 20, padding: 20,
               flexDirection: 'row', alignItems: 'center', gap: 16,

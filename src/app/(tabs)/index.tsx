@@ -1,12 +1,17 @@
-import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, useColorScheme, RefreshControl } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { View, Text, ScrollView, Pressable, TextInput, useColorScheme, RefreshControl, Animated as RNAnimated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
-import { getDb, todayDate, parseJson } from '@/db/client';
+import { getDb, todayDate } from '@/db/client';
+import { Mascot } from '@/components/mascot/Mascot';
+import { StreakCard } from '@/components/streak/StreakCard';
+import { MilestoneCelebration } from '@/components/streak/MilestoneCelebration';
+import { Toast, useToast } from '@/components/ui/Toast';
+import type { StreakMilestone } from '@/types/user';
 
 interface DailyVerseRow {
   id: string;
@@ -29,15 +34,30 @@ function getGreeting(name?: string): string {
 export default function TodayScreen() {
   const { t } = useTranslation();
   const systemScheme = useColorScheme();
-  const { colorScheme, preferences } = useAppStore();
-  const { streak, recordActivity, displayName } = useUserStore();
+  const { colorScheme } = useAppStore();
+  const { streak, milestones, recordActivity, displayName, toggleFavorite, isFavorite } = useUserStore();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { toastProps, show } = useToast();
 
   const [dailyVerse, setDailyVerse] = useState<DailyVerseRow | null>(null);
   const [gratitudeText, setGratitudeText] = useState('');
   const [gratitudeSaved, setGratitudeSaved] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [milestone, setMilestone] = useState<StreakMilestone | null>(null);
+
+  // Skeleton pulse animation
+  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
+  useEffect(() => {
+    const loop = RNAnimated.loop(
+      RNAnimated.sequence([
+        RNAnimated.timing(pulseAnim, { toValue: 0.45, duration: 850, useNativeDriver: true }),
+        RNAnimated.timing(pulseAnim, { toValue: 1, duration: 850, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim]);
 
   async function loadTodayData() {
     try {
@@ -52,7 +72,6 @@ export default function TodayScreen() {
         LIMIT 1
       `, [today]);
 
-      // Fallback: pick a featured verse if no daily verse scheduled
       if (!row) {
         const verse = await db.getFirstAsync<{ reference: string; text: string; book: string; id: string }>(
           'SELECT id, reference, text, book FROM verses WHERE is_featured = 1 ORDER BY RANDOM() LIMIT 1'
@@ -65,8 +84,10 @@ export default function TodayScreen() {
         }
       } else {
         setDailyVerse(row);
-        // Record verse-read activity
-        recordActivity('verse');
+        // Record verse-read activity + check milestone
+        await recordActivity('verse');
+        const hit = useUserStore.getState().checkMilestone();
+        if (hit) setMilestone(hit);
       }
     } catch (e) {
       console.warn('Error loading today data:', e);
@@ -85,10 +106,18 @@ export default function TodayScreen() {
         'INSERT INTO gratitude_entries (id, items, created_at) VALUES (?, ?, datetime("now"))',
         [`grat-${Date.now()}`, JSON.stringify([gratitudeText.trim()])]
       );
-      recordActivity('gratitude');
+      await recordActivity('gratitude');
       setGratitudeSaved(true);
+      show('Gratitude saved! ✨', 'success');
       setTimeout(() => { setGratitudeSaved(false); setGratitudeText(''); }, 2000);
     } catch (e) { console.warn(e); }
+  }
+
+  async function handleSaveVerse() {
+    if (!dailyVerse) return;
+    await toggleFavorite('verse', dailyVerse.id);
+    const saved = isFavorite('verse', dailyVerse.id);
+    show(saved ? 'Removed from favorites' : 'Verse saved! 🔖', saved ? 'info' : 'success');
   }
 
   async function onRefresh() {
@@ -102,16 +131,74 @@ export default function TodayScreen() {
   const cardBg = isDark ? '#332F26' : '#FFFFFF';
   const textPrimary = isDark ? '#F5EDD8' : '#292B28';
   const textSecondary = isDark ? '#B8AD97' : '#77766F';
+  const skeletonBase = isDark ? '#332F26' : '#EDE3D4';
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: textSecondary, fontFamily: 'Inter_400Regular' }}>Loading...</Text>
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          {/* Header skeleton */}
+          <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View>
+              <RNAnimated.View style={{ width: 200, height: 22, borderRadius: 8, backgroundColor: skeletonBase, opacity: pulseAnim, marginBottom: 6 }} />
+              <RNAnimated.View style={{ width: 130, height: 14, borderRadius: 6, backgroundColor: skeletonBase, opacity: pulseAnim }} />
+            </View>
+            <RNAnimated.View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: skeletonBase, opacity: pulseAnim }} />
+          </View>
+
+          {/* Verse hero card skeleton */}
+          <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
+            <RNAnimated.View style={{ backgroundColor: isDark ? '#3A3028' : '#F2D99A', borderRadius: 24, padding: 24, opacity: pulseAnim, minHeight: 160 }}>
+              <View style={{ width: 80, height: 10, borderRadius: 5, backgroundColor: isDark ? '#4A4030' : '#E8C97A', marginBottom: 14 }} />
+              <View style={{ width: '100%', height: 14, borderRadius: 6, backgroundColor: isDark ? '#4A4030' : '#E8C97A', marginBottom: 8 }} />
+              <View style={{ width: '90%', height: 14, borderRadius: 6, backgroundColor: isDark ? '#4A4030' : '#E8C97A', marginBottom: 8 }} />
+              <View style={{ width: '70%', height: 14, borderRadius: 6, backgroundColor: isDark ? '#4A4030' : '#E8C97A', marginBottom: 20 }} />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ width: 100, height: 14, borderRadius: 6, backgroundColor: isDark ? '#4A4030' : '#E8C97A' }} />
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? '#4A4030' : '#E8C97A' }} />
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? '#4A4030' : '#E8C97A' }} />
+                </View>
+              </View>
+            </RNAnimated.View>
+          </View>
+
+          {/* Streak card skeleton */}
+          <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
+            <RNAnimated.View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 20, opacity: pulseAnim, minHeight: 90 }}>
+              <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+                <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: skeletonBase }} />
+                <View style={{ flex: 1 }}>
+                  <View style={{ width: 100, height: 14, borderRadius: 6, backgroundColor: skeletonBase, marginBottom: 8 }} />
+                  <View style={{ width: 160, height: 10, borderRadius: 5, backgroundColor: skeletonBase }} />
+                </View>
+              </View>
+            </RNAnimated.View>
+          </View>
+
+          {/* Prayer CTA skeleton */}
+          <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
+            <RNAnimated.View style={{ backgroundColor: isDark ? '#3A3028' : '#FAE3D9', borderRadius: 20, padding: 20, opacity: pulseAnim, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: isDark ? '#4A3830' : '#F0C8B8' }} />
+              <View style={{ flex: 1 }}>
+                <View style={{ width: 140, height: 14, borderRadius: 6, backgroundColor: isDark ? '#4A3830' : '#F0C8B8', marginBottom: 8 }} />
+                <View style={{ width: 190, height: 10, borderRadius: 5, backgroundColor: isDark ? '#4A3830' : '#F0C8B8' }} />
+              </View>
+            </RNAnimated.View>
+          </View>
+
+          {/* Gratitude skeleton */}
+          <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
+            <RNAnimated.View style={{ backgroundColor: isDark ? '#2A3022' : '#E2EAE0', borderRadius: 20, padding: 20, opacity: pulseAnim, minHeight: 100 }}>
+              <View style={{ width: 120, height: 14, borderRadius: 6, backgroundColor: isDark ? '#3A4030' : '#C8D8C0', marginBottom: 14 }} />
+              <View style={{ width: '100%', height: 10, borderRadius: 5, backgroundColor: isDark ? '#3A4030' : '#C8D8C0', marginBottom: 8 }} />
+              <View style={{ width: '60%', height: 10, borderRadius: 5, backgroundColor: isDark ? '#3A4030' : '#C8D8C0' }} />
+            </RNAnimated.View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
-
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
@@ -132,7 +219,7 @@ export default function TodayScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={() => router.push('/settings/')}
+              onPress={() => router.push('/settings')}
               style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center' }}
             >
               <Text style={{ fontSize: 18 }}>⚙️</Text>
@@ -164,15 +251,21 @@ export default function TodayScreen() {
                 <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: '#292B28' }}>
                   {dailyVerse.verse_reference}
                 </Text>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
                   <Pressable
-                    onPress={(e) => { e.stopPropagation(); }}
-                    style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(41,43,40,0.12)', alignItems: 'center', justifyContent: 'center' }}
+                    onPress={(e) => { e.stopPropagation(); handleSaveVerse(); }}
+                    style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: isFavorite('verse', dailyVerse.id) ? 'rgba(41,43,40,0.25)' : 'rgba(41,43,40,0.12)', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Text style={{ fontSize: 16 }}>🔖</Text>
+                    <Text style={{ fontSize: 16 }}>{isFavorite('verse', dailyVerse.id) ? '🔖' : '🏷️'}</Text>
                   </Pressable>
                   <Pressable
-                    onPress={(e) => { e.stopPropagation(); }}
+                    onPress={async (e) => {
+                      e.stopPropagation();
+                      const { Share } = await import('react-native');
+                      Share.share({
+                        message: `"${dailyVerse.verse_text}"\n— ${dailyVerse.verse_reference}\n\nShared via DailyPrayer`,
+                      });
+                    }}
                     style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(41,43,40,0.12)', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Text style={{ fontSize: 16 }}>↗️</Text>
@@ -200,46 +293,9 @@ export default function TodayScreen() {
           </Animated.View>
         ) : null}
 
-        {/* ── Faith Streak ── */}
+        {/* ── Faith Streak Card ── */}
         <Animated.View entering={FadeInDown.duration(500).delay(300)} style={{ paddingHorizontal: 20, marginTop: 16 }}>
-          <View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 20, shadowColor: '#292B28', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                {t('today.streak')}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontSize: 20 }}>🔥</Text>
-                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 24, color: '#F2B84B', letterSpacing: -0.5 }}>
-                  {streak.currentStreak}
-                </Text>
-                <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: textSecondary }}>days</Text>
-              </View>
-            </View>
-
-            {/* Weekly calendar */}
-            <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'space-between' }}>
-              {streak.thisWeek.map((day, i) => {
-                const date = new Date(day.date + 'T00:00:00');
-                const isToday = day.date === todayDate();
-                return (
-                  <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-                    <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 10, color: textSecondary }}>
-                      {dayNames[date.getDay()]}
-                    </Text>
-                    <View style={{
-                      width: 32, height: 32, borderRadius: 16,
-                      backgroundColor: day.isComplete ? '#F2B84B' : isToday ? '#F2B84B20' : surfaceBg,
-                      borderWidth: isToday && !day.isComplete ? 2 : 0,
-                      borderColor: '#F2B84B',
-                      alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {day.isComplete && <Text style={{ fontSize: 14 }}>✓</Text>}
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
+          <StreakCard streak={streak} milestones={milestones} compact />
         </Animated.View>
 
         {/* ── Daily Prayer CTA ── */}
@@ -270,11 +326,16 @@ export default function TodayScreen() {
         {/* ── Gratitude prompt ── */}
         <Animated.View entering={FadeInDown.duration(500).delay(500)} style={{ paddingHorizontal: 20, marginTop: 16 }}>
           <View style={{ backgroundColor: isDark ? '#2A3022' : '#E2EAE0', borderRadius: 20, padding: 20 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Text style={{ fontSize: 20 }}>✨</Text>
-              <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 15, color: isDark ? '#A8BFA1' : '#1E2E1A' }}>
-                {t('today.gratitude')}
-              </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ fontSize: 20 }}>✨</Text>
+                <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 15, color: isDark ? '#A8BFA1' : '#1E2E1A' }}>
+                  {t('today.gratitude')}
+                </Text>
+              </View>
+              <Pressable onPress={() => router.push('/gratitude')}>
+                <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#617558' }}>History →</Text>
+              </Pressable>
             </View>
             <TextInput
               value={gratitudeText}
@@ -306,11 +367,20 @@ export default function TodayScreen() {
 
         {/* ── Mascot encouragement ── */}
         <Animated.View entering={FadeInUp.duration(500).delay(600)} style={{ paddingHorizontal: 20, marginTop: 20, alignItems: 'center' }}>
-          <Text style={{ fontFamily: 'Lora_400Regular_Italic', fontSize: 15, color: textSecondary, textAlign: 'center' }}>
+          <Mascot pose="greeting" size={90} />
+          <Text style={{ fontFamily: 'Lora_400Regular_Italic', fontSize: 15, color: textSecondary, textAlign: 'center', marginTop: 8 }}>
             "{t('today.mascotMessage')}"
           </Text>
         </Animated.View>
       </ScrollView>
+
+      {/* Milestone modal */}
+      <MilestoneCelebration
+        milestone={milestone}
+        onDismiss={() => setMilestone(null)}
+      />
+
+      <Toast {...toastProps} />
     </SafeAreaView>
   );
 }

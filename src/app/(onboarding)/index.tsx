@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -12,6 +12,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { StatusBar } from 'expo-status-bar';
+import { Mascot } from '@/components/mascot/Mascot';
+import { Button } from '@/components/ui/Button';
 
 export default function WelcomeScreen() {
   const { t } = useTranslation();
@@ -59,11 +61,9 @@ export default function WelcomeScreen() {
         {/* Mascot / Logo area */}
         <View className="flex-1 items-center justify-center">
           <Animated.View style={logoStyle} className="items-center">
-            {/* Logo mark */}
-            <View className="w-24 h-24 rounded-3xl bg-gold/20 items-center justify-center mb-6">
-              <View className="w-16 h-16 rounded-2xl bg-gold items-center justify-center">
-                <Text style={{ fontSize: 36 }}>☀️</Text>
-              </View>
+            {/* Mascot mark */}
+            <View className="mb-4">
+              <Mascot pose="greeting" size={140} />
             </View>
 
             {/* Wordmark */}
@@ -77,19 +77,17 @@ export default function WelcomeScreen() {
         </View>
 
         {/* Hero copy */}
-        <View className="items-center w-full mb-12">
+        <View className="items-center w-full mb-8">
           <Animated.Text
-            style={titleStyle}
-            className="text-display-sm font-bold text-charcoal dark:text-cream text-center leading-tight mb-4"
-            style={[{ fontFamily: 'Inter_700Bold', fontSize: 30, lineHeight: 38, letterSpacing: -0.5, textAlign: 'center' }]}
+            style={[titleStyle, { fontFamily: 'Inter_700Bold', fontSize: 28, lineHeight: 36, letterSpacing: -0.5, textAlign: 'center' }]}
+            className="text-display-sm font-bold text-charcoal dark:text-cream text-center leading-tight mb-3"
           >
             {t('onboarding.welcome.title')}
           </Animated.Text>
 
           <Animated.Text
-            style={subtitleStyle}
+            style={[subtitleStyle, { fontFamily: 'Inter_400Regular', fontSize: 16, lineHeight: 24, textAlign: 'center', color: '#77766F' }]}
             className="text-body-lg text-charcoal-400 dark:text-cream/60 text-center px-4"
-            style={[{ fontFamily: 'Inter_400Regular', fontSize: 17, lineHeight: 26, textAlign: 'center', color: '#77766F' }]}
           >
             {t('onboarding.welcome.subtitle')}
           </Animated.Text>
@@ -97,21 +95,15 @@ export default function WelcomeScreen() {
 
         {/* CTAs */}
         <Animated.View style={btnStyle} className="w-full gap-3">
-          <Pressable
+          <Button
+            title={t('onboarding.welcome.cta')}
             onPress={() => router.push('/(onboarding)/goals')}
-            className="w-full h-14 rounded-2xl bg-gold items-center justify-center active:scale-95"
-            style={{ borderRadius: 20 }}
-          >
-            <Text
-              className="text-charcoal font-semibold text-title-lg"
-              style={{ fontFamily: 'Inter_600SemiBold', fontSize: 17, color: '#292B28' }}
-            >
-              {t('onboarding.welcome.cta')}
-            </Text>
-          </Pressable>
+            size="lg"
+            variant="primary"
+          />
 
           <Pressable
-            onPress={() => router.push('/(tabs)/')}
+            onPress={() => router.push('/(tabs)')}
             className="w-full h-12 items-center justify-center"
           >
             <Text
@@ -126,3 +118,4 @@ export default function WelcomeScreen() {
     </SafeAreaView>
   );
 }
+

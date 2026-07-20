@@ -1,9 +1,12 @@
+import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, Text, Pressable, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/app.store';
+
+// Inline type replacing the un-installed @react-navigation/bottom-tabs dep
+type TabBarProps = { state: any; descriptors: any; navigation: any };
 
 // ── Tab icon components ───────────────────────────────────────────────────────
 function TodayIcon({ focused }: { focused: boolean }) {
@@ -27,7 +30,7 @@ function LibraryIcon({ focused }: { focused: boolean }) {
 }
 
 // ── Custom Tab Bar ────────────────────────────────────────────────────────────
-function DailyPrayerTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+function DailyPrayerTabBar({ state, descriptors, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const systemScheme = useColorScheme();
@@ -58,7 +61,7 @@ function DailyPrayerTabBar({ state, descriptors, navigation }: BottomTabBarProps
         elevation: 8,
       }}
     >
-      {state.routes.map((route, index) => {
+      {state.routes.map((route: { key: string; name: string }, index: number) => {
         const focused = state.index === index;
         const label = LABELS[index] ?? route.name;
 

@@ -145,7 +145,7 @@ export default function WidgetCustomizeScreen() {
                   key={theme.id}
                   onPress={() => {
                     if (theme.isPremium) {
-                      router.push('/premium/');
+                      router.push('/premium');
                     } else {
                       setSelectedTheme(theme);
                     }

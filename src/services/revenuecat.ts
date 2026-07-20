@@ -137,10 +137,8 @@ export async function purchasePackage(pkg: { identifier: string }): Promise<bool
     return customerInfo.entitlements.active[PREMIUM_ENTITLEMENT] != null;
   } catch (e: any) {
     if (e.userCancelled) return false;
-    // Fallback to demo mode purchase success for testing UI flows
-    const { setTier } = useSubscriptionStore.getState();
-    setTier('premium');
-    return true;
+    console.warn('[RevenueCat] Purchase failed:', e);
+    return false;
   }
 }
 
@@ -149,9 +147,8 @@ export async function restorePurchases(): Promise<boolean> {
   const isDemoKey = !apiKey || apiKey.includes('YOUR_KEY') || apiKey.includes('demo');
 
   if (isDemoKey) {
-    const { setTier } = useSubscriptionStore.getState();
-    setTier('premium');
-    return true;
+    console.log('[RevenueCat] Restore called in demo mode');
+    return false;
   }
 
   try {
@@ -159,8 +156,7 @@ export async function restorePurchases(): Promise<boolean> {
     handleCustomerInfo(info);
     return info.entitlements.active[PREMIUM_ENTITLEMENT] != null;
   } catch (e) {
-    const { setTier } = useSubscriptionStore.getState();
-    setTier('premium');
-    return true;
+    console.warn('[RevenueCat] Restore failed:', e);
+    return false;
   }
 }

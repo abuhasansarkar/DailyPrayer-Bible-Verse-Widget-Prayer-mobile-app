@@ -15,10 +15,11 @@ interface UserState {
 
   setProfile: (name: string, avatarUri?: string) => void;
   setStreak: (streak: StreakData) => void;
-  recordActivity: (activity: StreakActivity) => void;
-  toggleFavorite: (type: string, id: string) => void;
+  recordActivity: (activity: StreakActivity) => Promise<void>;
+  toggleFavorite: (type: string, id: string) => Promise<void>;
   isFavorite: (type: string, id: string) => boolean;
   checkMilestone: () => StreakMilestone | null;
+  loadUserDataFromDb: () => Promise<void>;
 }
 
 const MILESTONE_DATA: Record<MilestoneDay, { title: string; message: string; icon: string }> = {
@@ -71,20 +72,25 @@ export const useUserStore = create<UserState>((set, get) => ({
   setStreak: (streak) =>
     set({ streak, milestones: buildMilestones(streak.currentStreak) }),
 
-  recordActivity: (activity) => {
+  recordActivity: async (activity) => {
     const today = new Date().toISOString().split('T')[0]!;
+    let todayActivities: StreakActivity[] = [];
+    let isNowComplete = false;
+
     set((s) => {
       const week = s.streak.thisWeek.map((day) => {
         if (day.date !== today) return day;
         const activities = day.activities.includes(activity)
           ? day.activities
           : [...day.activities, activity];
+        todayActivities = activities;
         return { ...day, activities, isComplete: activities.length > 0 };
       });
 
       const todayDay = week.find((d) => d.date === today);
       const wasComplete = s.streak.thisWeek.find((d) => d.date === today)?.isComplete;
-      const nowComplete = todayDay?.isComplete;
+      const nowComplete = todayDay?.isComplete ?? false;
+      isNowComplete = nowComplete;
 
       let { currentStreak, longestStreak, totalDays } = s.streak;
       if (!wasComplete && nowComplete) {
@@ -98,16 +104,46 @@ export const useUserStore = create<UserState>((set, get) => ({
         milestones: buildMilestones(currentStreak),
       };
     });
+
+    try {
+      const { getDb } = await import('@/db/client');
+      const db = getDb();
+      await db.runAsync(
+        `INSERT INTO streak_log (id, date, activities, is_complete)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(date) DO UPDATE SET activities = excluded.activities, is_complete = excluded.is_complete`,
+        [`streak-${today}`, today, JSON.stringify(todayActivities), isNowComplete ? 1 : 0]
+      );
+    } catch (e) {
+      console.warn('[UserStore] Error writing streak to DB:', e);
+    }
   },
 
-  toggleFavorite: (type, id) => {
+  toggleFavorite: async (type, id) => {
     const key = `${type}:${id}`;
+    const wasFavorite = get().favoriteIds.has(key);
+
     set((s) => {
       const next = new Set(s.favoriteIds);
       if (next.has(key)) next.delete(key);
       else next.add(key);
       return { favoriteIds: next };
     });
+
+    try {
+      const { getDb } = await import('@/db/client');
+      const db = getDb();
+      if (wasFavorite) {
+        await db.runAsync('DELETE FROM favorites WHERE type = ? AND ref_id = ?', [type, id]);
+      } else {
+        await db.runAsync(
+          'INSERT OR IGNORE INTO favorites (id, type, ref_id) VALUES (?, ?, ?)',
+          [`fav-${Date.now()}`, type, id]
+        );
+      }
+    } catch (e) {
+      console.warn('[UserStore] Error writing favorite to DB:', e);
+    }
   },
 
   isFavorite: (type, id) => get().favoriteIds.has(`${type}:${id}`),
@@ -117,5 +153,78 @@ export const useUserStore = create<UserState>((set, get) => ({
     return milestones.find(
       (m) => m.achieved && m.days === streak.currentStreak
     ) ?? null;
+  },
+
+  loadUserDataFromDb: async () => {
+    try {
+      const { getDb, parseJson } = await import('@/db/client');
+      const db = getDb();
+
+      // Load favorites
+      const favRows = await db.getAllAsync<{ type: string; ref_id: string }>('SELECT type, ref_id FROM favorites');
+      const favoriteIds = new Set(favRows.map((r) => `${r.type}:${r.ref_id}`));
+
+      // Load streak log
+      const streakRows = await db.getAllAsync<{ date: string; activities: string; is_complete: number }>(
+        'SELECT date, activities, is_complete FROM streak_log ORDER BY date ASC'
+      );
+
+      const completedDates = new Set(streakRows.filter((r) => r.is_complete === 1).map((r) => r.date));
+      const today = new Date().toISOString().split('T')[0]!;
+
+      let currentStreak = 0;
+      let checkDate = new Date();
+      if (!completedDates.has(today)) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+      while (completedDates.has(checkDate.toISOString().split('T')[0]!)) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      }
+
+      let longestStreak = 0;
+      let tempStreak = 0;
+      const sortedDates = Array.from(completedDates).sort();
+      for (let i = 0; i < sortedDates.length; i++) {
+        if (i === 0) {
+          tempStreak = 1;
+        } else {
+          const prev = new Date(sortedDates[i - 1]!);
+          const curr = new Date(sortedDates[i]!);
+          const diffDays = Math.round((curr.getTime() - prev.getTime()) / (1000 * 3600 * 24));
+          if (diffDays === 1) tempStreak++;
+          else tempStreak = 1;
+        }
+        if (tempStreak > longestStreak) longestStreak = tempStreak;
+      }
+      if (currentStreak > longestStreak) longestStreak = currentStreak;
+
+      const thisWeek: DayActivity[] = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        const dateStr = d.toISOString().split('T')[0]!;
+        const row = streakRows.find((r) => r.date === dateStr);
+        const activities: StreakActivity[] = row ? parseJson(row.activities, []) : [];
+        return {
+          date: dateStr,
+          activities,
+          isComplete: activities.length > 0,
+        };
+      });
+
+      set({
+        favoriteIds,
+        streak: {
+          currentStreak,
+          longestStreak,
+          thisWeek,
+          totalDays: completedDates.size,
+          lastActivityDate: sortedDates[sortedDates.length - 1],
+        },
+        milestones: buildMilestones(currentStreak),
+      });
+    } catch (e) {
+      console.warn('[UserStore] Error loading data from DB:', e);
+    }
   },
 }));

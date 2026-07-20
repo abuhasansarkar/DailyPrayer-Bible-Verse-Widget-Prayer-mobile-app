@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
 import { getDb } from '@/db/client';
+import { Mascot } from '@/components/mascot/Mascot';
+import { Button } from '@/components/ui/Button';
 
 export default function ReadyScreen() {
   const { t } = useTranslation();
@@ -52,37 +54,27 @@ export default function ReadyScreen() {
       console.warn('Error saving preferences:', e);
     }
     setOnboardingComplete(true);
-    router.replace('/(tabs)/');
+    router.replace('/(tabs)');
   }
 
   return (
     <SafeAreaView className="flex-1 bg-cream dark:bg-bg-dark">
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
 
-        {/* Celebration icon */}
-        <Animated.View style={[iconStyle, { marginBottom: 32 }]}>
-          <View style={{
-            width: 120, height: 120, borderRadius: 40, backgroundColor: '#F2B84B20',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <View style={{
-              width: 88, height: 88, borderRadius: 28, backgroundColor: '#F2B84B',
-              alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Text style={{ fontSize: 48 }}>🌅</Text>
-            </View>
-          </View>
+        {/* Celebration Mascot */}
+        <Animated.View style={[iconStyle, { marginBottom: 24 }]}>
+          <Mascot pose="celebrating" size={140} />
         </Animated.View>
 
         <Animated.View style={[contentStyle, { alignItems: 'center', gap: 12 }]}>
           <Text style={{
-            fontFamily: 'Inter_700Bold', fontSize: 32, lineHeight: 40,
+            fontFamily: 'Inter_700Bold', fontSize: 30, lineHeight: 38,
             letterSpacing: -0.5, color: '#292B28', textAlign: 'center',
           }}>
             {t('onboarding.ready.title')}
           </Text>
           <Text style={{
-            fontFamily: 'Inter_400Regular', fontSize: 17, lineHeight: 26,
+            fontFamily: 'Inter_400Regular', fontSize: 16, lineHeight: 24,
             color: '#77766F', textAlign: 'center', paddingHorizontal: 16,
           }}>
             {t('onboarding.ready.subtitle')}
@@ -91,15 +83,15 @@ export default function ReadyScreen() {
           {/* Goals summary */}
           {completedGoals.length > 0 && (
             <View style={{
-              marginTop: 16, backgroundColor: '#F1E6D3', borderRadius: 16, padding: 16, gap: 8, width: '100%',
+              marginTop: 16, backgroundColor: '#F1E6D3', borderRadius: 20, padding: 20, gap: 10, width: '100%',
             }}>
-              <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: '#77766F', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#77766F', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                 Your goals
               </Text>
               {completedGoals.map((goal) => (
                 <View key={goal} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={{ fontSize: 16 }}>✓</Text>
-                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: '#292B28' }}>
+                  <Text style={{ fontSize: 16, color: '#96AA88' }}>✓</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 15, color: '#292B28' }}>
                     {goal.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                   </Text>
                 </View>
@@ -110,20 +102,14 @@ export default function ReadyScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 24, paddingBottom: 40, paddingTop: 16 }}>
-        <Pressable
+        <Button
+          title={t('onboarding.ready.cta')}
           onPress={handleStart}
-          style={{
-            height: 56, borderRadius: 20, backgroundColor: '#F2B84B',
-            alignItems: 'center', justifyContent: 'center',
-            shadowColor: '#F2B84B', shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
-          }}
-        >
-          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 17, color: '#292B28' }}>
-            {t('onboarding.ready.cta')}
-          </Text>
-        </Pressable>
+          size="lg"
+          variant="primary"
+        />
       </View>
     </SafeAreaView>
   );
 }
+
