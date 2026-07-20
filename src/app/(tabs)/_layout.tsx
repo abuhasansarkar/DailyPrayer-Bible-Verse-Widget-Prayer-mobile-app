@@ -1,103 +1,117 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
-import { View, Text, Pressable, useColorScheme } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { useAppStore } from '@/store/app.store';
+import { AppIcon, AppIconName } from "@/components/ui/AppIcon";
+import { useAppStore } from "@/store/app.store";
+import { Tabs } from "expo-router";
+import { useTranslation } from "react-i18next";
+import { Pressable, Text, useColorScheme, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Inline type replacing the un-installed @react-navigation/bottom-tabs dep
-type TabBarProps = { state: any; descriptors: any; navigation: any };
+type TabBarProps = {
+  state: { index: number; routes: { key: string; name: string }[] };
+  descriptors: Record<string, unknown>;
+  navigation: any;
+};
 
-// ── Tab icon components ───────────────────────────────────────────────────────
-function TodayIcon({ focused }: { focused: boolean }) {
-  return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: focused ? 22 : 20 }}>☀️</Text>
-    </View>
-  );
-}
-function ExploreIcon({ focused }: { focused: boolean }) {
-  return <Text style={{ fontSize: focused ? 22 : 20 }}>🔍</Text>;
-}
-function PrayIcon({ focused }: { focused: boolean }) {
-  return <Text style={{ fontSize: focused ? 22 : 20 }}>🙏</Text>;
-}
-function WidgetsIcon({ focused }: { focused: boolean }) {
-  return <Text style={{ fontSize: focused ? 22 : 20 }}>⬛</Text>;
-}
-function LibraryIcon({ focused }: { focused: boolean }) {
-  return <Text style={{ fontSize: focused ? 22 : 20 }}>📚</Text>;
-}
-
-// ── Custom Tab Bar ────────────────────────────────────────────────────────────
-function DailyPrayerTabBar({ state, descriptors, navigation }: TabBarProps) {
+function DailyPrayerTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const systemScheme = useColorScheme();
   const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const isDark =
+    (colorScheme === "system" ? systemScheme : colorScheme) === "dark";
 
-  const LABELS = [
-    t('tabs.today'),
-    t('tabs.explore'),
-    t('tabs.pray'),
-    t('tabs.widgets'),
-    t('tabs.library'),
-  ];
+  const tabMeta: Record<string, { label: string; icon: AppIconName }> = {
+    index: { label: t("tabs.today"), icon: "home" },
+    explore: { label: t("tabs.explore"), icon: "compass" },
+    pray: { label: t("tabs.pray"), icon: "pray" },
+    journal: { label: t("tabs.journal"), icon: "journal" },
+    library: { label: t("tabs.library"), icon: "library" },
+  };
 
   return (
     <View
       style={{
-        flexDirection: 'row',
-        backgroundColor: isDark ? '#2A2720' : '#FFFFFF',
+        flexDirection: "row",
+        backgroundColor: isDark ? "#2A2720" : "#FFFFFF",
         paddingBottom: Math.max(insets.bottom, 8),
         paddingTop: 8,
         borderTopWidth: 1,
-        borderTopColor: isDark ? 'rgba(245,237,216,0.07)' : 'rgba(41,43,40,0.07)',
-        shadowColor: '#292B28',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 8,
+        borderTopColor: isDark
+          ? "rgba(245,237,216,0.08)"
+          : "rgba(41,43,40,0.08)",
+        shadowColor: "#292B28",
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 10,
       }}
     >
-      {state.routes.map((route: { key: string; name: string }, index: number) => {
-        const focused = state.index === index;
-        const label = LABELS[index] ?? route.name;
+      {state.routes.map((route) => {
+        const focused =
+          state.index === state.routes.findIndex((r) => r.key === route.key);
+        const meta = tabMeta[route.name] ?? {
+          label: route.name,
+          icon: "grid" as AppIconName,
+        };
+        const iconColor = focused ? "#292B28" : isDark ? "#7A7264" : "#77766F";
 
         const onPress = () => {
-          const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+          const event = navigation.emit({
+            type: "tabPress",
+            target: route.key,
+            canPreventDefault: true,
+          });
           if (!focused && !event.defaultPrevented) {
             navigation.navigate(route.name);
           }
         };
 
-        const icons = [TodayIcon, ExploreIcon, PrayIcon, WidgetsIcon, LibraryIcon];
-        const IconComp = icons[index]!;
-
         return (
           <Pressable
             key={route.key}
             onPress={onPress}
-            style={{ flex: 1, alignItems: 'center', gap: 3, paddingVertical: 4, minHeight: 44 }}
+            accessibilityRole="button"
+            accessibilityState={focused ? { selected: true } : {}}
+            style={{
+              flex: 1,
+              alignItems: "center",
+              gap: 4,
+              paddingVertical: 4,
+              minHeight: 48,
+            }}
           >
-            <IconComp focused={focused} />
+            <View
+              style={{
+                width: 36,
+                height: 28,
+                borderRadius: 14,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: focused ? "#F2B84B" : "transparent",
+              }}
+            >
+              <AppIcon
+                name={meta.icon}
+                size={19}
+                color={iconColor}
+                strokeWidth={focused ? 2.4 : 2}
+              />
+            </View>
             <Text
               style={{
-                fontFamily: focused ? 'Inter_600SemiBold' : 'Inter_400Regular',
+                fontFamily: focused ? "Inter_600SemiBold" : "Inter_400Regular",
                 fontSize: 10,
-                letterSpacing: 0.1,
                 color: focused
-                  ? '#F2B84B'
-                  : isDark ? '#7A7264' : '#77766F',
+                  ? isDark
+                    ? "#F5EDD8"
+                    : "#292B28"
+                  : isDark
+                    ? "#7A7264"
+                    : "#77766F",
               }}
               numberOfLines={1}
             >
-              {label}
+              {meta.label}
             </Text>
-            {focused && (
-              <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#F2B84B', marginTop: 1 }} />
-            )}
           </Pressable>
         );
       })}
@@ -105,7 +119,6 @@ function DailyPrayerTabBar({ state, descriptors, navigation }: TabBarProps) {
   );
 }
 
-// ── Tabs Layout ───────────────────────────────────────────────────────────────
 export default function TabsLayout() {
   return (
     <Tabs
@@ -115,7 +128,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="explore" />
       <Tabs.Screen name="pray" />
-      <Tabs.Screen name="widgets" />
+      <Tabs.Screen name="journal" />
       <Tabs.Screen name="library" />
     </Tabs>
   );

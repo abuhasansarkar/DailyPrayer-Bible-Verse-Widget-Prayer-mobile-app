@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Pressable, Switch, useColorScheme } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Pressable, Switch, useColorScheme, Alert, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +7,15 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
 import { useSubscriptionStore } from '@/store/subscription.store';
+import { AppIcon, AppIconName } from '@/components/ui/AppIcon';
+import {
+  getOpenCodeZenApiKey,
+  getOpenCodeZenModel,
+  OPENCODE_ZEN_FREE_MODELS,
+  setOpenCodeZenApiKey,
+  setOpenCodeZenModel,
+  OpenCodeZenModelId,
+} from '@/services/opencode-zen';
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
@@ -14,12 +24,24 @@ export default function SettingsScreen() {
   const { displayName, streak } = useUserStore();
   const { tier } = useSubscriptionStore();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const [zenConfigured, setZenConfigured] = useState(false);
+  const [zenModel, setZenModel] = useState<OpenCodeZenModelId>('deepseek-v4-flash-free');
 
   const bg = isDark ? '#1E1C18' : '#FFF9EE';
   const surfaceBg = isDark ? '#2A2720' : '#F1E6D3';
   const cardBg = isDark ? '#332F26' : '#FFFFFF';
   const textPrimary = isDark ? '#F5EDD8' : '#292B28';
   const textSecondary = isDark ? '#B8AD97' : '#77766F';
+  const divider = isDark ? 'rgba(245,237,216,0.07)' : 'rgba(41,43,40,0.07)';
+
+  useEffect(() => {
+    async function loadZenSettings() {
+      const [apiKey, model] = await Promise.all([getOpenCodeZenApiKey(), getOpenCodeZenModel()]);
+      setZenConfigured(Boolean(apiKey));
+      setZenModel(model);
+    }
+    loadZenSettings().catch(console.warn);
+  }, []);
 
   const handleToggleTheme = async (v: boolean) => {
     const newScheme = v ? 'dark' : 'light';
@@ -69,7 +91,10 @@ export default function SettingsScreen() {
   };
 
   const handleEditProfile = () => {
-    const { Alert } = require('react-native');
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Profile name', 'Profile editing from Settings is currently available on iOS.');
+      return;
+    }
     Alert.prompt(
       'Edit Profile Name',
       'How should DailyPrayer address you?',
@@ -95,129 +120,136 @@ export default function SettingsScreen() {
     );
   };
 
-  type RowData = { label: string; icon: string; value?: string; onPress?: () => void; isToggle?: boolean; toggled?: boolean; onToggle?: (v: boolean) => void };
+  const handleSetZenKey = () => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('OpenCode Zen', 'Secure API key entry is ready for iOS. Add an Android secure input screen before shipping this flow on Android.');
+      return;
+    }
+    Alert.prompt(
+      'OpenCode Zen API Key',
+      'Paste your OpenCode Zen key. It is stored in SecureStore on this device.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          onPress: async (key?: string) => {
+            await setOpenCodeZenApiKey(key ?? '');
+            setZenConfigured(Boolean(key?.trim()));
+          },
+        },
+      ],
+      'secure-text'
+    );
+  };
+
+  const handleCycleZenModel = async () => {
+    const currentIdx = OPENCODE_ZEN_FREE_MODELS.findIndex((model) => model.id === zenModel);
+    const next = OPENCODE_ZEN_FREE_MODELS[(currentIdx + 1) % OPENCODE_ZEN_FREE_MODELS.length]!;
+    await setOpenCodeZenModel(next.id);
+    setZenModel(next.id);
+  };
+
+  type RowData = {
+    label: string;
+    icon: AppIconName;
+    value?: string;
+    onPress?: () => void;
+    isToggle?: boolean;
+    toggled?: boolean;
+    onToggle?: (v: boolean) => void;
+    accent?: string;
+  };
 
   const sections: { title: string; rows: RowData[] }[] = [
     {
-      title: 'Preferences',
+      title: 'Daily Practice',
       rows: [
-        { label: t('settings.notifications'), icon: '🔔', isToggle: true, toggled: preferences.notificationsEnabled, onToggle: handleToggleNotifications },
-        { label: t('settings.translation'), icon: '📖', value: preferences.preferredTranslation, onPress: handleCycleTranslation },
-        { label: 'Dark Mode', icon: '🌙', isToggle: true, toggled: colorScheme === 'dark', onToggle: handleToggleTheme },
-        { label: t('settings.language'), icon: '🌐', value: preferences.language === 'en' ? 'English' : 'Français', onPress: handleCycleLanguage },
-        {
-          label: t('settings.accessibility'),
-          icon: '♿',
-          onPress: () => {
-            const { Alert } = require('react-native');
-            Alert.alert(
-              'Accessibility Preferences',
-              `Reduced Motion: ${preferences.reducedMotion ? 'On' : 'Off'}\nHigh Contrast: ${preferences.highContrast ? 'On' : 'Off'}\nFont Size: ${preferences.fontSize}`,
-              [{ text: 'OK' }]
-            );
-          },
-        },
+        { label: t('settings.notifications'), icon: 'bell', isToggle: true, toggled: preferences.notificationsEnabled, onToggle: handleToggleNotifications, accent: '#F2B84B' },
+        { label: t('settings.translation'), icon: 'book', value: preferences.preferredTranslation, onPress: handleCycleTranslation, accent: '#D98262' },
+        { label: 'Widgets', icon: 'widget', value: 'Setup', onPress: () => router.push('/(tabs)/widgets'), accent: '#96AA88' },
+      ],
+    },
+    {
+      title: 'App',
+      rows: [
+        { label: 'Dark Mode', icon: 'moon', isToggle: true, toggled: colorScheme === 'dark', onToggle: handleToggleTheme, accent: '#7BB8D4' },
+        { label: t('settings.language'), icon: 'globe', value: preferences.language === 'en' ? 'English' : 'Francais', onPress: handleCycleLanguage, accent: '#96AA88' },
+        { label: t('settings.accessibility'), icon: 'shield', value: preferences.fontSize, onPress: () => Alert.alert('Accessibility', `Reduced Motion: ${preferences.reducedMotion ? 'On' : 'Off'}\nHigh Contrast: ${preferences.highContrast ? 'On' : 'Off'}\nFont Size: ${preferences.fontSize}`), accent: '#B8A8CC' },
+      ],
+    },
+    {
+      title: 'OpenCode Zen',
+      rows: [
+        { label: 'API Key', icon: 'lock', value: zenConfigured ? 'Connected' : 'Not set', onPress: handleSetZenKey, accent: '#292B28' },
+        { label: 'Free Model', icon: 'ai', value: OPENCODE_ZEN_FREE_MODELS.find((model) => model.id === zenModel)?.name, onPress: handleCycleZenModel, accent: '#D98262' },
       ],
     },
     {
       title: 'Account',
       rows: [
-        {
-          label: t('settings.subscription'),
-          icon: '⭐',
-          value: tier === 'free' ? 'Free' : 'Premium',
-          onPress: () => router.push('/premium'),
-        },
-        {
-          label: t('settings.privacy'),
-          icon: '🔒',
-          onPress: () => {
-            const { Linking } = require('react-native');
-            Linking.openURL('https://dailyprayer.app/privacy').catch(() => {});
-          },
-        },
-        {
-          label: t('settings.help'),
-          icon: '💬',
-          onPress: () => {
-            const { Linking } = require('react-native');
-            Linking.openURL('mailto:support@dailyprayer.app?subject=DailyPrayer%20Support').catch(() => {});
-          },
-        },
-        {
-          label: t('settings.about'),
-          icon: 'ℹ️',
-          onPress: () => {
-            const { Alert } = require('react-native');
-            Alert.alert('DailyPrayer v1.0.0', 'A quiet moment with God, every day.\nBuilt with care for your daily spiritual journey.');
-          },
-        },
+        { label: t('settings.subscription'), icon: 'sparkle', value: tier === 'free' ? 'Free' : 'Premium', onPress: () => router.push('/premium'), accent: '#F2B84B' },
+        { label: t('settings.privacy'), icon: 'shield', onPress: () => Linking.openURL('https://dailyprayer.app/privacy').catch(() => {}), accent: '#96AA88' },
+        { label: t('settings.help'), icon: 'help', onPress: () => Linking.openURL('mailto:support@dailyprayer.app?subject=DailyPrayer%20Support').catch(() => {}), accent: '#7BB8D4' },
+        { label: t('settings.about'), icon: 'info', onPress: () => Alert.alert('DailyPrayer v1.0.0', 'A quiet moment with God, every day.\nBuilt with care for your daily spiritual journey.'), accent: '#D98262' },
       ],
     },
   ];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
-      {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 16 }}>
-        <Pressable onPress={router.back} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
-          <Text>←</Text>
+        <Pressable onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 15, backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
+          <AppIcon name="arrowLeft" size={20} color={textPrimary} />
         </Pressable>
-        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 20, color: textPrimary }}>{t('settings.title')}</Text>
+        <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 22, color: textPrimary }}>{t('settings.title')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-        {/* Profile card */}
-        <Animated.View entering={FadeInDown.duration(400)} style={{ backgroundColor: '#F2B84B', borderRadius: 20, padding: 20, marginBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(41,43,40,0.15)', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 28 }}>🌅</Text>
+        <Animated.View entering={FadeInDown.duration(350)} style={{ backgroundColor: '#F2B84B', borderRadius: 22, padding: 20, marginBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          <View style={{ width: 58, height: 58, borderRadius: 20, backgroundColor: 'rgba(41,43,40,0.14)', alignItems: 'center', justifyContent: 'center' }}>
+            <AppIcon name="home" size={28} color="#292B28" strokeWidth={2.3} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 18, color: '#292B28' }}>
-              {displayName || 'My DailyPrayer'}
-            </Text>
-            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: 'rgba(41,43,40,0.7)' }}>
-              🔥 {streak.currentStreak} day streak · {tier === 'premium' ? 'Premium' : 'Free'}
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 18, color: '#292B28' }}>{displayName || 'My DailyPrayer'}</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: 'rgba(41,43,40,0.72)', marginTop: 3 }}>
+              {streak.currentStreak} day streak � {tier === 'premium' ? 'Premium' : 'Free'}
             </Text>
           </View>
-          <Pressable onPress={handleEditProfile} style={{ backgroundColor: 'rgba(41,43,40,0.12)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: '#292B28' }}>{t('common.edit')}</Text>
+          <Pressable onPress={handleEditProfile} style={{ backgroundColor: 'rgba(41,43,40,0.12)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }}>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 13, color: '#292B28' }}>{t('common.edit')}</Text>
           </Pressable>
         </Animated.View>
 
-        {/* Settings sections */}
-        {sections.map((section, si) => (
-          <Animated.View key={si} entering={FadeInDown.duration(400).delay(si * 100 + 100)} style={{ marginBottom: 24 }}>
-            <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 12, color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, paddingLeft: 4 }}>
+        {sections.map((section, sectionIndex) => (
+          <Animated.View key={section.title} entering={FadeInDown.duration(350).delay(sectionIndex * 70 + 80)} style={{ marginBottom: 22 }}>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, paddingLeft: 2 }}>
               {section.title}
             </Text>
-            <View style={{ backgroundColor: cardBg, borderRadius: 20, overflow: 'hidden', shadowColor: '#292B28', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
-              {section.rows.map((row, ri) => (
+            <View style={{ backgroundColor: cardBg, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: divider }}>
+              {section.rows.map((row, rowIndex) => (
                 <Pressable
-                  key={ri}
+                  key={row.label}
                   onPress={row.isToggle ? undefined : row.onPress}
                   style={{
-                    flexDirection: 'row', alignItems: 'center', gap: 14,
-                    paddingHorizontal: 18, paddingVertical: 14,
-                    borderBottomWidth: ri < section.rows.length - 1 ? 1 : 0,
-                    borderBottomColor: isDark ? 'rgba(245,237,216,0.07)' : 'rgba(41,43,40,0.07)',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 14,
+                    paddingHorizontal: 16,
+                    paddingVertical: 15,
+                    borderBottomWidth: rowIndex < section.rows.length - 1 ? 1 : 0,
+                    borderBottomColor: divider,
                   }}
                 >
-                  <Text style={{ fontSize: 20 }}>{row.icon}</Text>
-                  <Text style={{ flex: 1, fontFamily: 'Inter_400Regular', fontSize: 16, color: textPrimary }}>
-                    {row.label}
-                  </Text>
+                  <View style={{ width: 36, height: 36, borderRadius: 13, backgroundColor: `${row.accent ?? '#F2B84B'}22`, alignItems: 'center', justifyContent: 'center' }}>
+                    <AppIcon name={row.icon} size={19} color={row.accent ?? '#F2B84B'} />
+                  </View>
+                  <Text style={{ flex: 1, fontFamily: 'Inter_500Medium', fontSize: 15, color: textPrimary }}>{row.label}</Text>
                   {row.isToggle ? (
-                    <Switch
-                      value={row.toggled}
-                      onValueChange={row.onToggle}
-                      trackColor={{ false: '#CFCFCA', true: '#F2B84B' }}
-                      thumbColor="#FFFFFF"
-                    />
+                    <Switch value={row.toggled} onValueChange={row.onToggle} trackColor={{ false: '#CFCFCA', true: '#F2B84B' }} thumbColor="#FFFFFF" />
                   ) : (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      {row.value && <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: textSecondary }}>{row.value}</Text>}
-                      <Text style={{ color: textSecondary }}>›</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, maxWidth: 176 }}>
+                      {row.value && <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: textSecondary }} numberOfLines={1}>{row.value}</Text>}
+                      <AppIcon name="chevronRight" size={17} color={textSecondary} />
                     </View>
                   )}
                 </Pressable>
@@ -226,7 +258,6 @@ export default function SettingsScreen() {
           </Animated.View>
         ))}
 
-        {/* Version */}
         <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: textSecondary, textAlign: 'center', marginTop: 8 }}>
           DailyPrayer v1.0.0
         </Text>
