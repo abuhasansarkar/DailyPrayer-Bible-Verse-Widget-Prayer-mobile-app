@@ -1,0 +1,95 @@
+{
+  "common": {
+    "appName": "DailyPrayer",
+    "tagline": "Un moment tranquille avec Dieu, chaque jour.",
+    "continue": "Continuer",
+    "skip": "Passer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "done": "Terminé",
+    "close": "Fermer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "share": "Partager",
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "retry": "Réessayer",
+    "or": "ou",
+    "new": "Nouveau",
+    "premium": "Premium",
+    "free": "Gratuit",
+    "upgrade": "Passer à Premium",
+    "back": "Retour",
+    "search": "Rechercher",
+    "noResults": "Aucun résultat trouvé",
+    "all": "Tout"
+  },
+  "tabs": {
+    "today": "Aujourd'hui",
+    "explore": "Explorer",
+    "pray": "Prier",
+    "widgets": "Widgets",
+    "library": "Bibliothèque"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Un moment tranquille\navec Dieu, chaque jour.",
+      "subtitle": "Écritures, prière et réflexion — tissées doucement dans votre vie quotidienne.",
+      "cta": "Commencer mon voyage",
+      "signIn": "J'ai déjà un compte"
+    },
+    "goals": {
+      "title": "Qu'espérez-vous\nachievoir?",
+      "subtitle": "Choisissez ce qui vous importe le plus en ce moment.",
+      "helperText": "Vous pouvez toujours modifier cela plus tard."
+    },
+    "reminder": {
+      "title": "Quand aimeriez-vous\nêtre rappelé?",
+      "subtitle": "Un rappel doux au bon moment fait toute la différence.",
+      "morning": "Matin",
+      "evening": "Soir",
+      "custom": "Heure personnalisée",
+      "skip": "Je configurerai cela plus tard"
+    },
+    "ready": {
+      "title": "Vous êtes prêt.",
+      "subtitle": "Tout est prêt pour votre voyage spirituel quotidien.",
+      "cta": "Ouvrir DailyPrayer"
+    }
+  },
+  "today": {
+    "greeting": {
+      "morning": "Bonjour, {{name}}",
+      "afternoon": "Bon après-midi, {{name}}",
+      "evening": "Bonsoir, {{name}}",
+      "anonymous": "Bonjour"
+    },
+    "verseOfDay": "Verset du Jour",
+    "reflection": "Réflexion du Jour",
+    "prayer": "Prière du Jour",
+    "streak": "Constance de Foi",
+    "gratitude": "Pour quoi êtes-vous reconnaissant aujourd'hui?",
+    "gratitudePlaceholder": "Écrivez quelque chose...",
+    "mascotMessage": "Chaque moment de foi compte."
+  },
+  "premium": {
+    "title": "DailyPrayer Premium",
+    "subtitle": "Approfondissez votre voyage spirituel quotidien",
+    "monthly": "Mensuel",
+    "annual": "Annuel",
+    "lifetime": "À vie",
+    "subscribe": "S'abonner",
+    "restore": "Restaurer les achats",
+    "termsNote": "Annulez à tout moment. Voir les Conditions et la Politique de confidentialité."
+  },
+  "errors": {
+    "offline": {
+      "title": "Vous êtes hors ligne",
+      "subtitle": "Connectez-vous à Internet pour synchroniser votre contenu."
+    },
+    "general": {
+      "title": "Une erreur s'est produite",
+      "subtitle": "Nous n'avons pas pu effectuer cette action. Veuillez réessayer."
+    }
+  }
+}

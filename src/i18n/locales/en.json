@@ -1,0 +1,271 @@
+{
+  "common": {
+    "appName": "DailyPrayer",
+    "tagline": "A quiet moment with God, every day.",
+    "continue": "Continue",
+    "skip": "Skip",
+    "save": "Save",
+    "cancel": "Cancel",
+    "done": "Done",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "share": "Share",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "or": "or",
+    "new": "New",
+    "premium": "Premium",
+    "free": "Free",
+    "upgrade": "Upgrade to Premium",
+    "back": "Back",
+    "search": "Search",
+    "noResults": "No results found",
+    "all": "All"
+  },
+  "tabs": {
+    "today": "Today",
+    "explore": "Explore",
+    "pray": "Pray",
+    "widgets": "Widgets",
+    "library": "Library"
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "A quiet moment\nwith God, every day.",
+      "subtitle": "Scripture, prayer, and reflection — gently woven into your daily life.",
+      "cta": "Begin My Journey",
+      "signIn": "I already have an account"
+    },
+    "goals": {
+      "title": "What are you\nhoping for?",
+      "subtitle": "Choose what matters most to you right now.",
+      "helperText": "You can always change this later."
+    },
+    "translation": {
+      "title": "Choose your\nBible translation",
+      "subtitle": "You can change this at any time in settings."
+    },
+    "reminder": {
+      "title": "When would you\nlike to be reminded?",
+      "subtitle": "A gentle nudge at the right moment makes all the difference.",
+      "morning": "Morning",
+      "evening": "Evening",
+      "custom": "Custom time",
+      "skip": "I'll set this up later"
+    },
+    "theme": {
+      "title": "Choose your\nlook and feel",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System default"
+    },
+    "ready": {
+      "title": "You're all set.",
+      "subtitle": "Everything is ready for your daily spiritual journey.",
+      "cta": "Open DailyPrayer"
+    }
+  },
+  "today": {
+    "greeting": {
+      "morning": "Good morning, {{name}}",
+      "afternoon": "Good afternoon, {{name}}",
+      "evening": "Good evening, {{name}}",
+      "anonymous": "Good morning"
+    },
+    "verseOfDay": "Verse of the Day",
+    "reflection": "Today's Reflection",
+    "prayer": "Today's Prayer",
+    "streak": "Faith Streak",
+    "gratitude": "What are you grateful for today?",
+    "gratitudePlaceholder": "Write something...",
+    "mascotMessage": "Every faithful moment matters.",
+    "continueReading": "Continue Reading",
+    "todayReminder": "Today's Reminder"
+  },
+  "verse": {
+    "reference": "Reference",
+    "save": "Save Verse",
+    "saved": "Saved",
+    "share": "Share",
+    "reflection": "Reflection",
+    "relatedVerses": "Related Verses",
+    "prayer": "Prayer",
+    "translation": "Translation",
+    "copyText": "Copy text",
+    "copied": "Copied!",
+    "createImage": "Create Image"
+  },
+  "prayer": {
+    "title": "Prayer",
+    "guidedPrayers": "Guided Prayers",
+    "myPrayers": "My Prayers",
+    "categories": {
+      "morning": "Morning",
+      "evening": "Evening",
+      "gratitude": "Gratitude",
+      "peace": "Peace",
+      "anxiety": "Anxiety",
+      "strength": "Strength",
+      "healing": "Healing",
+      "family": "Family",
+      "relationships": "Relationships",
+      "forgiveness": "Forgiveness",
+      "guidance": "Guidance",
+      "protection": "Protection",
+      "work": "Work",
+      "sleep": "Sleep",
+      "difficult-times": "Difficult Times",
+      "personal": "Personal"
+    },
+    "markPrayed": "Mark as Prayed",
+    "prayed": "Prayed",
+    "addReminder": "Add Reminder",
+    "writeReflection": "Write a reflection...",
+    "minuteRead": "{{minutes}} min",
+    "newPrayer": "New Prayer",
+    "prayerTitle": "Prayer title",
+    "prayerBody": "Write your prayer...",
+    "answeredPrayers": "Answered Prayers",
+    "markAnswered": "Mark as Answered",
+    "emptyState": {
+      "title": "No prayers yet",
+      "subtitle": "Start your prayer journal today.",
+      "cta": "Write a Prayer"
+    }
+  },
+  "streak": {
+    "days": "{{count}} days",
+    "day": "{{count}} day",
+    "current": "Current Streak",
+    "longest": "Longest Streak",
+    "totalDays": "Total Days",
+    "thisWeek": "This Week",
+    "keepGoing": "Keep going!",
+    "welcome_back": "Welcome back.",
+    "new_beginning": "Every day is a new beginning.",
+    "small_step": "A small moment of faith is meaningful.",
+    "milestones": {
+      "title": "You reached {{days}} days!",
+      "share": "Share this milestone"
+    }
+  },
+  "journal": {
+    "title": "Journal",
+    "gratitude": "Gratitude",
+    "reflection": "Reflection",
+    "newEntry": "New Entry",
+    "editEntry": "Edit Entry",
+    "mood": "How are you feeling?",
+    "tags": "Tags",
+    "private": "Private entry",
+    "emptyState": {
+      "title": "Your journal is empty",
+      "subtitle": "Begin capturing your spiritual journey.",
+      "cta": "Write First Entry"
+    }
+  },
+  "explore": {
+    "title": "Explore",
+    "search": "Search Scripture...",
+    "topics": "Topics",
+    "featured": "Featured Collections",
+    "devotionals": "Devotionals",
+    "bibleBooks": "Bible Books",
+    "oldTestament": "Old Testament",
+    "newTestament": "New Testament"
+  },
+  "widgets": {
+    "title": "Widgets",
+    "subtitle": "Add Scripture to your home screen",
+    "gallery": "Widget Gallery",
+    "customize": "Customize",
+    "preview": "Preview",
+    "install": "How to Install",
+    "themes": "Themes",
+    "size": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "lockscreen": "Lock Screen"
+    },
+    "content": {
+      "daily-verse": "Daily Verse",
+      "favorite-verse": "Favorite Verse",
+      "daily-prayer": "Daily Prayer",
+      "streak": "Faith Streak",
+      "morning-devotion": "Morning Devotion",
+      "evening-reflection": "Evening Reflection"
+    },
+    "premiumRequired": "Premium required for this theme"
+  },
+  "library": {
+    "title": "Library",
+    "favorites": "Favorites",
+    "collections": "Collections",
+    "history": "History",
+    "savedPrayers": "Saved Prayers",
+    "createCollection": "Create Collection",
+    "emptyFavorites": {
+      "title": "No favorites yet",
+      "subtitle": "Tap the bookmark on any verse or prayer to save it here."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "appearance": "Appearance",
+    "translation": "Bible Translation",
+    "language": "Language",
+    "privacy": "Privacy",
+    "accessibility": "Accessibility",
+    "subscription": "Subscription",
+    "help": "Help & Support",
+    "about": "About DailyPrayer",
+    "version": "Version {{version}}",
+    "rateApp": "Rate the App",
+    "reportBug": "Report a Bug",
+    "signOut": "Sign Out"
+  },
+  "premium": {
+    "title": "DailyPrayer Premium",
+    "subtitle": "Deepen your daily spiritual journey",
+    "features": {
+      "allThemes": "All widget themes",
+      "customPhoto": "Custom photo backgrounds",
+      "unlimitedReminders": "Unlimited reminders",
+      "unlimitedFavorites": "Unlimited favorites",
+      "collections": "Custom collections",
+      "prayerLibrary": "Complete prayer library",
+      "devotionals": "Complete devotional library",
+      "shareTemplates": "Advanced share templates",
+      "offline": "Offline access",
+      "cloudSync": "Cloud synchronization",
+      "noAds": "No advertisements",
+      "noWatermark": "No watermarks"
+    },
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "lifetime": "Lifetime",
+    "trial": "Start {{days}}-day free trial",
+    "subscribe": "Subscribe",
+    "restore": "Restore Purchases",
+    "termsNote": "Cancel anytime. See Terms & Privacy Policy."
+  },
+  "errors": {
+    "offline": {
+      "title": "You're offline",
+      "subtitle": "Connect to the internet to sync your content."
+    },
+    "general": {
+      "title": "Something went wrong",
+      "subtitle": "We couldn't complete that action. Please try again."
+    },
+    "notFound": {
+      "title": "Content not found",
+      "subtitle": "This item may have been removed."
+    }
+  }
+}

@@ -1,9 +1,62 @@
+/* DailyPrayer — Global CSS Design System */
+/* NativeWind v4 base layer */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+  /* Web font variables */
+  --font-display: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Light theme semantic tokens */
+  --color-bg: #FFF9EE;
+  --color-surface: #F1E6D3;
+  --color-elevated: #FFFFFF;
+  --color-border: rgba(41, 43, 40, 0.10);
+  --color-divider: rgba(41, 43, 40, 0.07);
+  --color-brand: #F2B84B;
+  --color-accent: #D98262;
+  --color-growth: #96AA88;
+  --color-text-primary: #292B28;
+  --color-text-secondary: #77766F;
+  --color-text-tertiary: #A8A8A0;
+  --color-text-disabled: #CFCFCA;
+  --color-text-inverse: #FFF9EE;
+  --color-success: #5C9E6A;
+  --color-warning: #E8A830;
+  --color-error: #D04A3C;
+  --color-info: #4A7CB8;
+  --color-prayer: #D98262;
+  --color-scripture: #F2B84B;
+  --color-gratitude: #96AA88;
+  --color-journal: #7BB8D4;
+  --color-premium: #F2B84B;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1E1C18;
+    --color-surface: #2A2720;
+    --color-elevated: #332F26;
+    --color-border: rgba(245, 237, 216, 0.10);
+    --color-divider: rgba(245, 237, 216, 0.07);
+    --color-brand: #F2B84B;
+    --color-accent: #E89070;
+    --color-growth: #A8BFA1;
+    --color-text-primary: #F5EDD8;
+    --color-text-secondary: #B8AD97;
+    --color-text-tertiary: #7A7264;
+    --color-text-disabled: #4A4740;
+    --color-text-inverse: #292B28;
+    --color-success: #72B880;
+    --color-warning: #F0B840;
+    --color-error: #E06050;
+    --color-info: #6A9CC8;
+  }
 }
