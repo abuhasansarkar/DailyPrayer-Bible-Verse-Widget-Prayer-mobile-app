@@ -4,9 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
+import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { getDb, generateId, nowIso } from '@/db/client';
+import VerseImageGenerator from '@/components/verse/VerseImageGenerator';
 
 interface VerseDetail {
   id: string;
@@ -27,11 +31,14 @@ export default function VerseDetailScreen() {
   const systemScheme = useColorScheme();
   const { colorScheme } = useAppStore();
   const { toggleFavorite, isFavorite, recordActivity } = useUserStore();
+  const { isPlayingSpeech, playVerseSpeech } = useAudioPlayer();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
 
   const [verse, setVerse] = useState<VerseDetail | null>(null);
   const [relatedVerses, setRelatedVerses] = useState<{ id: string; reference: string; text: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCardStudio, setShowCardStudio] = useState(false);
+
   const favorited = verse ? isFavorite('verse', verse.id) : false;
 
   const bg = isDark ? '#1E1C18' : '#FFF9EE';
@@ -45,7 +52,6 @@ export default function VerseDetailScreen() {
       if (!id) return;
       const db = getDb();
 
-      // Try loading from daily_verses first (has reflection/prayer)
       const daily = await db.getFirstAsync<VerseDetail>(`
         SELECT v.*, dv.reflection, dv.prayer
         FROM verses v
@@ -58,7 +64,6 @@ export default function VerseDetailScreen() {
         setVerse(daily);
         recordActivity('verse');
 
-        // Load related verses by shared topics
         const topics = JSON.parse(daily.topics || '[]') as string[];
         if (topics.length > 0) {
           const related = await db.getAllAsync<{ id: string; reference: string; text: string }>(
@@ -75,6 +80,7 @@ export default function VerseDetailScreen() {
 
   async function handleFavorite() {
     if (!verse) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const db = getDb();
     if (favorited) {
       await db.runAsync('DELETE FROM favorites WHERE type = ? AND ref_id = ?', ['verse', verse.id]);
@@ -85,13 +91,6 @@ export default function VerseDetailScreen() {
       );
     }
     toggleFavorite('verse', verse.id);
-  }
-
-  async function handleShare() {
-    if (!verse) return;
-    await Share.share({
-      message: `"${verse.text}"\n— ${verse.reference} (${verse.translation})\n\nShared via DailyPrayer`,
-    });
   }
 
   if (loading || !verse) {
@@ -107,15 +106,18 @@ export default function VerseDetailScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 }}>
         <Pressable onPress={router.back} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 18 }}>←</Text>
+          <Text style={{ fontSize: 18, color: textPrimary }}>←</Text>
         </Pressable>
         <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: textPrimary }}>{verse.reference}</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Pressable onPress={handleFavorite} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: favorited ? '#F2B84B22' : surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 18 }}>{favorited ? '🔖' : '🔖'}</Text>
+          <Pressable onPress={() => playVerseSpeech(`"${verse.text}" — ${verse.reference}`)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isPlayingSpeech ? '#F2B84B' : surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 16 }}>{isPlayingSpeech ? '⏸️' : '🔊'}</Text>
           </Pressable>
-          <Pressable onPress={handleShare} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 18 }}>↗️</Text>
+          <Pressable onPress={handleFavorite} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: favorited ? '#F2B84B22' : surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 16 }}>{favorited ? '🔖' : '🔖'}</Text>
+          </Pressable>
+          <Pressable onPress={() => setShowCardStudio(true)} style={{ backgroundColor: '#F2B84B', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, justifyContent: 'center' }}>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 12, color: '#292B28' }}>🖼️ Studio</Text>
           </Pressable>
         </View>
       </View>
@@ -181,6 +183,15 @@ export default function VerseDetailScreen() {
           </Animated.View>
         )}
       </ScrollView>
+
+      {/* Verse Card Exporter Studio */}
+      <VerseImageGenerator
+        visible={showCardStudio}
+        onClose={() => setShowCardStudio(false)}
+        verseText={verse.text}
+        reference={verse.reference}
+        translation={verse.translation}
+      />
     </SafeAreaView>
   );
 }

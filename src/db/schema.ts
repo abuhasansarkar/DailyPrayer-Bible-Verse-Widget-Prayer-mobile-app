@@ -213,8 +213,35 @@ export const CREATE_TABLES_SQL = `
 `;
 
 
-export const DB_VERSION = 1;
+export const MIGRATION_2_SQL = `
+  CREATE TABLE IF NOT EXISTS verse_highlights (
+    id TEXT PRIMARY KEY NOT NULL,
+    verse_id TEXT NOT NULL,
+    color TEXT NOT NULL DEFAULT '#F2B84B',
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS community_prayers (
+    id TEXT PRIMARY KEY NOT NULL,
+    author_alias TEXT NOT NULL DEFAULT 'Anonymous',
+    category TEXT NOT NULL DEFAULT 'General',
+    content TEXT NOT NULL,
+    prayer_count INTEGER NOT NULL DEFAULT 1,
+    user_prayed INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS user_badges (
+    id TEXT PRIMARY KEY NOT NULL,
+    badge_key TEXT NOT NULL UNIQUE,
+    unlocked_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`;
+
+export const DB_VERSION = 2;
 
 export const MIGRATIONS: Record<number, string> = {
   1: CREATE_TABLES_SQL,
+  2: MIGRATION_2_SQL,
 };

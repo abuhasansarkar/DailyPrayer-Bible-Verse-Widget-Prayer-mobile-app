@@ -24,31 +24,38 @@ export async function initDb(): Promise<SQLite.SQLiteDatabase> {
 }
 
 async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
-  // Get current schema version
-  const result = await db.getFirstAsync<{ user_version: number }>(
-    'PRAGMA user_version'
-  );
+  // Set PRAGMAs outside transactions
+  try {
+    await db.execAsync('PRAGMA journal_mode = WAL;');
+    await db.execAsync('PRAGMA foreign_keys = ON;');
+  } catch (e) {
+    console.warn('[DB] PRAGMA config warning:', e);
+  }
+
+  const result = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const currentVersion = result?.user_version ?? 0;
 
   if (currentVersion < DB_VERSION) {
-    // Apply each migration in order
     for (let v = currentVersion + 1; v <= DB_VERSION; v++) {
       const sql = MIGRATIONS[v];
       if (sql) {
         const statements = sql
           .split(';')
           .map((s) => s.trim())
-          .filter((s) => s.length > 0);
+          .filter((s) => s.length > 0 && !s.toLowerCase().startsWith('pragma'));
         for (const stmt of statements) {
-          await db.execAsync(stmt);
+          try {
+            await db.execAsync(stmt);
+          } catch (err) {
+            console.warn(`[DB] Migration ${v} statement warning:`, err);
+          }
         }
       }
     }
-    // Update schema version
     await db.execAsync(`PRAGMA user_version = ${DB_VERSION}`);
   }
 
-  // Ensure is_answered column exists on journal_entries for existing databases
+  // Ensure optional columns exist for legacy databases
   try {
     await db.execAsync('ALTER TABLE journal_entries ADD COLUMN is_answered INTEGER NOT NULL DEFAULT 0;');
   } catch {

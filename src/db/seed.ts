@@ -13,7 +13,8 @@ export async function seedDatabase(): Promise<void> {
   );
   if ((count?.count ?? 0) > 0) return;
 
-  // ── Topics ────────────────────────────────────────────────────────────────
+  await db.withTransactionAsync(async () => {
+    // ── Topics ────────────────────────────────────────────────────────────────
   const topics = [
     { id: 'hope', name: 'Hope', slug: 'hope', description: 'Verses about hope and trust in God', icon: '✨', color: '#F2B84B', is_premium: 0 },
     { id: 'peace', name: 'Peace', slug: 'peace', description: 'Find peace in God\'s presence', icon: '🕊️', color: '#96AA88', is_premium: 0 },
@@ -235,4 +236,21 @@ export async function seedDatabase(): Promise<void> {
     `INSERT OR IGNORE INTO user_preferences (id, goals, preferred_translation, app_theme) VALUES (1, ?, 'NIV', 'system')`,
     [toJson([])]
   );
+
+  // ── Community Prayers Seed ──────────────────────────────────────────────
+  const communityPrayers = [
+    { id: 'comm-1', author: 'Sarah M.', category: 'Healing', content: 'Please pray for my mother\'s upcoming surgery next Tuesday. Praying for peace for our family and wisdom for the surgeons.', prayer_count: 14, user_prayed: 0 },
+    { id: 'comm-2', author: 'Brother David', category: 'Peace', content: 'Seeking God\'s clarity and calm heart amidst a heavy week at work and major decisions ahead.', prayer_count: 9, user_prayed: 0 },
+    { id: 'comm-3', author: 'Grace & John', category: 'Family', content: 'Praying for our newborn baby who is in the ICU. We trust in God\'s unfailing healing hands.', prayer_count: 32, user_prayed: 0 },
+    { id: 'comm-4', author: 'Anonymous Pilgrim', category: 'Strength', content: 'Asking for strength to overcome anxiety and walk in the confidence of God\'s love every morning.', prayer_count: 21, user_prayed: 0 },
+    { id: 'comm-5', author: 'Elena R.', category: 'Guidance', content: 'Praying for direction as I apply to college and seek God\'s true calling for my life.', prayer_count: 11, user_prayed: 0 },
+  ];
+
+  for (const cp of communityPrayers) {
+    await db.runAsync(
+      `INSERT OR IGNORE INTO community_prayers (id, author_alias, category, content, prayer_count, user_prayed) VALUES (?, ?, ?, ?, ?, ?)`,
+      [cp.id, cp.author, cp.category, cp.content, cp.prayer_count, cp.user_prayed]
+    );
+  }
+  });
 }

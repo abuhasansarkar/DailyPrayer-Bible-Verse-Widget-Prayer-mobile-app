@@ -4,9 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
+import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { getDb } from '@/db/client';
+import MascotCelebration from '@/components/mascot/MascotCelebration';
 
 interface PrayerDetail {
   id: string;
@@ -26,10 +30,12 @@ export default function PrayerDetailScreen() {
   const systemScheme = useColorScheme();
   const { colorScheme } = useAppStore();
   const { recordActivity } = useUserStore();
+  const { isPlayingSpeech, playVerseSpeech, activeSoundscape, selectSoundscape } = useAudioPlayer();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
 
   const [prayer, setPrayer] = useState<PrayerDetail | null>(null);
   const [prayed, setPrayed] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const bg = isDark ? '#1E1C18' : '#FFF9EE';
   const surfaceBg = isDark ? '#2A2720' : '#F1E6D3';
@@ -51,8 +57,10 @@ export default function PrayerDetailScreen() {
   }, [id]);
 
   function handleMarkPrayed() {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     recordActivity('prayer');
     setPrayed(true);
+    setShowCelebration(true);
   }
 
   if (!prayer) {
@@ -68,7 +76,7 @@ export default function PrayerDetailScreen() {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 16 }}>
         <Pressable onPress={router.back} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 18 }}>←</Text>
+          <Text style={{ fontSize: 18, color: textPrimary }}>←</Text>
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: textPrimary }}>{prayer.title}</Text>
@@ -76,6 +84,23 @@ export default function PrayerDetailScreen() {
             {prayer.duration_minutes} min · {prayer.category.charAt(0).toUpperCase() + prayer.category.slice(1)}
           </Text>
         </View>
+      </View>
+
+      {/* Audio & Soundscape Controls */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10, backgroundColor: surfaceBg }}>
+        <Pressable onPress={() => playVerseSpeech(`${prayer.title}. ${prayer.body}`)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={{ fontSize: 16 }}>{isPlayingSpeech ? '⏸️' : '🔊'}</Text>
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: isPlayingSpeech ? '#F2B84B' : textPrimary }}>
+            {isPlayingSpeech ? 'Pause Voice' : 'Spoken Prayer'}
+          </Text>
+        </Pressable>
+
+        <Pressable onPress={() => selectSoundscape(activeSoundscape ? null : 'sanctuary')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={{ fontSize: 16 }}>🕊️</Text>
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: activeSoundscape ? '#F2B84B' : textSecondary }}>
+            {activeSoundscape ? 'Sanctuary Ambient' : 'Ambient Music'}
+          </Text>
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -137,6 +162,17 @@ export default function PrayerDetailScreen() {
           </Pressable>
         )}
       </View>
+
+      {/* Celebration Modal */}
+      <MascotCelebration
+        visible={showCelebration}
+        onClose={() => {
+          setShowCelebration(false);
+          router.back();
+        }}
+        title="Prayer Complete"
+        subtitle={`You've dedicated time to pray '${prayer.title}'. Peace be with you.`}
+      />
     </SafeAreaView>
   );
 }

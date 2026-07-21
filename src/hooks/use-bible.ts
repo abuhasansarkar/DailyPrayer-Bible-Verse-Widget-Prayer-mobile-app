@@ -137,16 +137,18 @@ export function useBible(book?: string, chapter?: number) {
   }, []);
 
   const searchVerses = useCallback(async (query: string, limit = 30) => {
-    if (!query.trim()) return [];
+    const trimmed = query.trim();
+    if (!trimmed) return [];
     try {
       const db = getDb();
+      const sanitized = trimmed.replace(/[%_\\]/g, '\\$&');
       const results = await db.getAllAsync<{
         id: string; reference: string; text: string; book: string; chapter: number;
       }>(
         `SELECT id, reference, text, book, chapter FROM verses
-         WHERE text LIKE ? OR reference LIKE ?
+         WHERE text LIKE ? ESCAPE '\\' OR reference LIKE ? ESCAPE '\\'
          ORDER BY book, chapter LIMIT ?`,
-        [`%${query}%`, `%${query}%`, limit]
+        [`%${sanitized}%`, `%${sanitized}%`, limit]
       );
       return results;
     } catch (e) {

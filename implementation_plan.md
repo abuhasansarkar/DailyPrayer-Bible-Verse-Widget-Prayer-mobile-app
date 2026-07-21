@@ -1,4 +1,4 @@
-# DailyPrayer — Bible Verse Widget & Prayer
+# DailyPrayer — Bible Verse Widget & Prayer Reminder App
 
 ## Production-Ready Expo App — Implementation Plan
 
