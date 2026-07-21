@@ -1,6 +1,6 @@
-import { View, TextInput, Text, Pressable, useColorScheme } from 'react-native';
+import { View, TextInput, Text, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { useAppStore } from '@/store/app.store';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface InputProps {
   label?: string;
@@ -37,9 +37,7 @@ export function Input({
   rightIcon,
   style,
 }: InputProps) {
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
   const focused = useSharedValue(0);
 
   const borderStyle = useAnimatedStyle(() => ({
@@ -53,7 +51,7 @@ export function Input({
 
   const cardBg = isDark ? '#2A2720' : '#FFFFFF';
   const textColor = isDark ? '#F5EDD8' : '#292B28';
-  const placeholderColor = isDark ? '#6A6355' : '#B8B2AA';
+  const placeholderColor = isDark ? '#B8AD97' : '#B8B2AA';
   const labelColor = isDark ? '#B8AD97' : '#77766F';
 
   return (

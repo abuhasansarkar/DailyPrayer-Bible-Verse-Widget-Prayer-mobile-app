@@ -5,6 +5,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/app.store';
 import { getDb, nowIso } from '@/db/client';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface JournalDetail {
   id: string;
@@ -18,9 +19,7 @@ interface JournalDetail {
 export default function JournalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
 
   const [entry, setEntry] = useState<JournalDetail | null>(null);
   const [title, setTitle] = useState('');

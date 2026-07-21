@@ -27,8 +27,11 @@ import { requestNotificationPermission, syncRemindersFromDb } from '@/services/n
 import { ensureAuth, runFullSync } from '@/services/supabase';
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 import '@/global.css';
+
+import { useColorScheme as useNwColorScheme } from 'nativewind';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -48,6 +51,7 @@ initI18n();
 export default function RootLayout() {
   const systemColorScheme = useColorScheme();
   const { colorScheme, setDbReady, setOnboardingComplete } = useAppStore();
+  const { setColorScheme: setNwColorScheme } = useNwColorScheme();
   const [appIsReady, setAppIsReady] = useState(false);
   const notifListenerRef = useRef<any>(null);
 
@@ -194,6 +198,19 @@ export default function RootLayout() {
     };
   }, []);
 
+  // Determine resolved theme
+  const resolvedScheme =
+    colorScheme === 'system' ? (systemColorScheme ?? 'light') : colorScheme;
+  const isDark = resolvedScheme === 'dark';
+
+  useEffect(() => {
+    try {
+      setNwColorScheme(resolvedScheme as 'light' | 'dark');
+    } catch {
+      // noop
+    }
+  }, [resolvedScheme, setNwColorScheme]);
+
   // While initializing: render a splash-colored placeholder so there is never
   // a blank white/dark frame between the native splash and the app content.
   if (!appIsReady || !fontsLoaded) {
@@ -207,68 +224,65 @@ export default function RootLayout() {
     );
   }
 
-  // Determine resolved theme
-  const resolvedScheme =
-    colorScheme === 'system' ? (systemColorScheme ?? 'light') : colorScheme;
-  const isDark = resolvedScheme === 'dark';
-
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <View
-            className={isDark ? 'flex-1 bg-bg-dark' : 'flex-1 bg-cream'}
-          >
-            <StatusBar
-              barStyle={isDark ? 'light-content' : 'dark-content'}
-              backgroundColor={isDark ? '#1E1C18' : '#FFF9EE'}
-            />
-            <Stack screenOptions={{ headerShown: false }}>
-              {/* Root redirect — routes to onboarding or tabs */}
-              <Stack.Screen name="index" />
-              {/* Onboarding group */}
-              <Stack.Screen name="(onboarding)" />
-              {/* Main tabs */}
-              <Stack.Screen name="(tabs)" />
-              {/* Verse */}
-              <Stack.Screen name="verse/[id]" />
-              {/* Prayer */}
-              <Stack.Screen name="prayer/[id]" />
-              <Stack.Screen name="prayer/category/[cat]" />
-              {/* Journal */}
-              <Stack.Screen name="journal/new" />
-              <Stack.Screen name="journal/[id]" />
-              {/* Gratitude history */}
-              <Stack.Screen name="gratitude/index" />
-              {/* Bible */}
-              <Stack.Screen name="bible/index" />
-              <Stack.Screen name="bible/[book]/[chapter]" />
-              {/* Search */}
-              <Stack.Screen name="search" options={{ presentation: 'modal' }} />
-              {/* Topic */}
-              <Stack.Screen name="topic/[id]" />
-              {/* Collection */}
-              <Stack.Screen name="collection/[id]" />
-              {/* Widget */}
-              <Stack.Screen name="widget/install" />
-              <Stack.Screen name="widget/themes" />
-              <Stack.Screen
-                name="widget/[id]/customize"
-                options={{ presentation: 'modal' }}
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <QueryClientProvider client={queryClient}>
+            <View
+              className={isDark ? 'flex-1 bg-bg-dark' : 'flex-1 bg-cream'}
+            >
+              <StatusBar
+                barStyle={isDark ? 'light-content' : 'dark-content'}
+                backgroundColor={isDark ? '#1E1C18' : '#FFF9EE'}
               />
-              {/* Premium */}
-              <Stack.Screen
-                name="premium/index"
-                options={{ presentation: 'modal' }}
-              />
-              {/* Settings */}
-              <Stack.Screen name="settings/screen" />
-              {/* Catch-all unmatched route handler */}
-              <Stack.Screen name="+not-found" />
-            </Stack>
-          </View>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+              <Stack screenOptions={{ headerShown: false }}>
+                {/* Root redirect — routes to onboarding or tabs */}
+                <Stack.Screen name="index" />
+                {/* Onboarding group */}
+                <Stack.Screen name="(onboarding)" />
+                {/* Main tabs */}
+                <Stack.Screen name="(tabs)" />
+                {/* Verse */}
+                <Stack.Screen name="verse/[id]" />
+                {/* Prayer */}
+                <Stack.Screen name="prayer/[id]" />
+                <Stack.Screen name="prayer/category/[cat]" />
+                {/* Journal */}
+                <Stack.Screen name="journal/new" />
+                <Stack.Screen name="journal/[id]" />
+                {/* Gratitude history */}
+                <Stack.Screen name="gratitude/index" />
+                {/* Bible */}
+                <Stack.Screen name="bible/index" />
+                <Stack.Screen name="bible/[book]/[chapter]" />
+                {/* Search */}
+                <Stack.Screen name="search" options={{ presentation: 'modal' }} />
+                {/* Topic */}
+                <Stack.Screen name="topic/[id]" />
+                {/* Collection */}
+                <Stack.Screen name="collection/[id]" />
+                {/* Widget */}
+                <Stack.Screen name="widget/install" />
+                <Stack.Screen name="widget/themes" />
+                <Stack.Screen
+                  name="widget/[id]/customize"
+                  options={{ presentation: 'modal' }}
+                />
+                {/* Premium */}
+                <Stack.Screen
+                  name="premium/index"
+                  options={{ presentation: 'modal' }}
+                />
+                {/* Settings */}
+                <Stack.Screen name="settings/screen" />
+                {/* Catch-all unmatched route handler */}
+                <Stack.Screen name="+not-found" />
+              </Stack>
+            </View>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

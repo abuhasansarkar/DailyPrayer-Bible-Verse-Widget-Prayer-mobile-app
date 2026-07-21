@@ -5,6 +5,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAppStore } from '@/store/app.store';
 import { getDb } from '@/db/client';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface TopicRow {
   id: string;
@@ -32,9 +33,7 @@ const FALLBACK_TOPICS: Record<string, { name: string; icon: string; color: strin
 
 export default function TopicDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
 
   const topicKey = (id ?? '').toLowerCase();
   const fallbackMeta = FALLBACK_TOPICS[topicKey] ?? {

@@ -12,6 +12,7 @@ import { getBibleChapter, formatBibleText, getBookSlug } from '@/services/bibleA
 import { BIBLE_BOOKS } from '@/constants/bibleBooks';
 import { getDb, generateId, nowIso } from '@/db/client';
 import VerseImageGenerator from '@/components/verse/VerseImageGenerator';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface HighlightItem {
   verse_number: number;
@@ -21,10 +22,9 @@ interface HighlightItem {
 export default function BibleChapterScreen() {
   const { book, chapter } = useLocalSearchParams<{ book: string; chapter: string }>();
   const { t } = useTranslation();
-  const systemScheme = useColorScheme();
-  const { colorScheme, preferences } = useAppStore();
+  const { isDark } = useResolvedTheme();
+  const { preferences } = useAppStore();
   const { isPlayingSpeech, playVerseSpeech, activeSoundscape, selectSoundscape } = useAudioPlayer();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
 
   const [verses, setVerses] = useState<Array<{ verse_number: number; text: string }>>([]);
   const [loading, setLoading] = useState(true);

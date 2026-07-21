@@ -7,8 +7,7 @@ import Animated, {
   withSpring, withTiming, runOnJS, Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColorScheme } from 'react-native';
-import { useAppStore } from '@/store/app.store';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -30,9 +29,7 @@ export function BottomSheet({
   showHandle = true,
 }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
 
   const sheetHeight = SCREEN_HEIGHT * snapPoint;
   const translateY = useSharedValue(sheetHeight);

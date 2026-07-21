@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAppStore } from '@/store/app.store';
 import { getDb, parseJson } from '@/db/client';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface CollectionRow {
   id: string;
@@ -22,9 +23,7 @@ interface ItemRow {
 
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
 
   const [collection, setCollection] = useState<CollectionRow | null>(null);
   const [items, setItems] = useState<ItemRow[]>([]);

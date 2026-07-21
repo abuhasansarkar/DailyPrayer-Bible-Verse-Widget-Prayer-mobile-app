@@ -13,14 +13,18 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface FavoriteRow {
+interface CollectionRow {
   id: string;
-  type: string;
-  ref_id: string;
-  note: string | null;
+  name: string;
+  description: string | null;
   created_at: string;
-  verse_text?: string;
-  verse_reference?: string;
+}
+
+interface HistoryRow {
+  id: string;
+  title: string;
+  type: string;
+  date: string;
 }
 
 export default function LibraryScreen() {
@@ -30,6 +34,8 @@ export default function LibraryScreen() {
   const isDark =
     (colorScheme === "system" ? systemScheme : colorScheme) === "dark";
   const [favorites, setFavorites] = useState<FavoriteRow[]>([]);
+  const [collections, setCollections] = useState<CollectionRow[]>([]);
+  const [history, setHistory] = useState<HistoryRow[]>([]);
   const [activeTab, setActiveTab] = useState<
     "favorites" | "collections" | "history"
   >("favorites");
@@ -41,19 +47,53 @@ export default function LibraryScreen() {
   const textSecondary = isDark ? "#B8AD97" : "#77766F";
 
   useEffect(() => {
-    async function loadFavorites() {
-      const db = getDb();
-      const rows = await db.getAllAsync<FavoriteRow>(`
-        SELECT f.*, v.text as verse_text, v.reference as verse_reference
-        FROM favorites f
-        LEFT JOIN verses v ON f.ref_id = v.id AND f.type = 'verse'
-        ORDER BY f.created_at DESC
-        LIMIT 50
-      `);
-      setFavorites(rows);
+    async function loadData() {
+      try {
+        const db = getDb();
+        if (activeTab === "favorites") {
+          const rows = await db.getAllAsync<FavoriteRow>(`
+            SELECT f.*, v.text as verse_text, v.reference as verse_reference
+            FROM favorites f
+            LEFT JOIN verses v ON f.ref_id = v.id AND f.type = 'verse'
+            ORDER BY f.created_at DESC
+            LIMIT 50
+          `);
+          setFavorites(rows || []);
+        } else if (activeTab === "collections") {
+          const cols = await db.getAllAsync<CollectionRow>(
+            `SELECT * FROM user_collections ORDER BY created_at DESC`
+          );
+          setCollections(cols || []);
+        } else if (activeTab === "history") {
+          const hist = await db.getAllAsync<HistoryRow>(
+            `SELECT id, title, type, created_at as date FROM journal_entries ORDER BY created_at DESC LIMIT 20`
+          );
+          setHistory(hist || []);
+        }
+      } catch (err) {
+        console.warn("[LibraryScreen] Load data error:", err);
+      }
     }
-    if (activeTab === "favorites") loadFavorites();
+    loadData();
   }, [activeTab]);
+
+  const handleCreateCollection = async () => {
+    const colName = `Collection #${collections.length + 1}`;
+    try {
+      const db = getDb();
+      const newId = `col-${Date.now()}`;
+      await db.runAsync(
+        `INSERT INTO user_collections (id, name, description, created_at) VALUES (?, ?, ?, ?)`,
+        [newId, colName, 'Custom user collection', new Date().toISOString()]
+      );
+      setCollections((prev) => [
+        { id: newId, name: colName, description: 'Custom user collection', created_at: new Date().toISOString() },
+        ...prev,
+      ]);
+    } catch (e) {
+      console.warn('[LibraryScreen] Error creating collection:', e);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
@@ -218,80 +258,121 @@ export default function LibraryScreen() {
               ))
             ))}
 
-          {activeTab === "collections" && (
-            <View
-              style={{ alignItems: "center", paddingVertical: 60, gap: 12 }}
-            >
-              <Text style={{ fontSize: 56 }}>📚</Text>
-              <Text
-                style={{
-                  fontFamily: "Inter_600SemiBold",
-                  fontSize: 18,
-                  color: textPrimary,
-                }}
+          {activeTab === "collections" &&
+            (collections.length === 0 ? (
+              <View
+                style={{ alignItems: "center", paddingVertical: 60, gap: 12 }}
               >
-                No collections yet
-              </Text>
-              <Text
-                style={{
-                  fontFamily: "Inter_400Regular",
-                  fontSize: 15,
-                  color: textSecondary,
-                  textAlign: "center",
-                  paddingHorizontal: 16,
-                }}
-              >
-                Create a collection to group your favorite verses and prayers.
-              </Text>
-              <Pressable
-                style={{
-                  height: 48,
-                  paddingHorizontal: 24,
-                  borderRadius: 24,
-                  backgroundColor: "#F2B84B",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+                <Text style={{ fontSize: 56 }}>📚</Text>
                 <Text
                   style={{
                     fontFamily: "Inter_600SemiBold",
-                    fontSize: 15,
-                    color: "#292B28",
+                    fontSize: 18,
+                    color: textPrimary,
                   }}
                 >
-                  {t("library.createCollection")}
+                  No collections yet
                 </Text>
-              </Pressable>
-            </View>
-          )}
+                <Text
+                  style={{
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 15,
+                    color: textSecondary,
+                    textAlign: "center",
+                    paddingHorizontal: 16,
+                  }}
+                >
+                  Create a collection to group your favorite verses and prayers.
+                </Text>
+                <Pressable
+                  onPress={handleCreateCollection}
+                  style={{
+                    height: 48,
+                    paddingHorizontal: 24,
+                    borderRadius: 24,
+                    backgroundColor: "#F2B84B",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "Inter_600SemiBold",
+                      fontSize: 15,
+                      color: "#292B28",
+                    }}
+                  >
+                    {t("library.createCollection")}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              collections.map((col) => (
+                <View
+                  key={col.id}
+                  style={{
+                    backgroundColor: cardBg,
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 12,
+                  }}
+                >
+                  <Text style={{ fontFamily: "Inter_700Bold", fontSize: 16, color: textPrimary, marginBottom: 4 }}>
+                    📁 {col.name}
+                  </Text>
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 13, color: textSecondary }}>
+                    {col.description || 'Custom collection'}
+                  </Text>
+                </View>
+              ))
+            ))}
 
-          {activeTab === "history" && (
-            <View
-              style={{ alignItems: "center", paddingVertical: 60, gap: 12 }}
-            >
-              <Text style={{ fontSize: 56 }}>📖</Text>
-              <Text
-                style={{
-                  fontFamily: "Inter_600SemiBold",
-                  fontSize: 18,
-                  color: textPrimary,
-                }}
+          {activeTab === "history" &&
+            (history.length === 0 ? (
+              <View
+                style={{ alignItems: "center", paddingVertical: 60, gap: 12 }}
               >
-                Reading history
-              </Text>
-              <Text
-                style={{
-                  fontFamily: "Inter_400Regular",
-                  fontSize: 15,
-                  color: textSecondary,
-                  textAlign: "center",
-                }}
-              >
-                Verses and prayers you've read will appear here.
-              </Text>
-            </View>
-          )}
+                <Text style={{ fontSize: 56 }}>📖</Text>
+                <Text
+                  style={{
+                    fontFamily: "Inter_600SemiBold",
+                    fontSize: 18,
+                    color: textPrimary,
+                  }}
+                >
+                  Reading history
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: "Inter_400Regular",
+                    fontSize: 15,
+                    color: textSecondary,
+                    textAlign: "center",
+                  }}
+                >
+                  Verses and prayers you've read will appear here.
+                </Text>
+              </View>
+            ) : (
+              history.map((item) => (
+                <View
+                  key={item.id}
+                  style={{
+                    backgroundColor: cardBg,
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 10,
+                  }}
+                >
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 14, color: textPrimary }}>
+                    {item.title}
+                  </Text>
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 12, color: textSecondary, marginTop: 4 }}>
+                    {item.type} • {item.date ? new Date(item.date).toLocaleDateString() : 'Recently'}
+                  </Text>
+                </View>
+              ))
+            ))}
         </Animated.View>
       </ScrollView>
     </SafeAreaView>

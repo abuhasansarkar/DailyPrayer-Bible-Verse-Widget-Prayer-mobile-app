@@ -6,6 +6,7 @@ import { useAppStore } from '@/store/app.store';
 import { useJournal } from '@/hooks/use-journal';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { useState } from 'react';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 const GRATITUDE_PROMPTS = [
   'What made you smile today?',
@@ -24,12 +25,13 @@ function formatDate(dateStr: string): string {
 }
 
 export default function GratitudeScreen() {
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
   const { gratitude, loading, addGratitude } = useJournal();
   const { toastProps, show } = useToast();
 
+  const [prompts] = useState(() =>
+    [...GRATITUDE_PROMPTS].sort(() => Math.random() - 0.5).slice(0, 3)
+  );
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
   const [text3, setText3] = useState('');
@@ -37,12 +39,10 @@ export default function GratitudeScreen() {
 
   const bg = isDark ? '#1E1C18' : '#FFF9EE';
   const cardBg = isDark ? '#332F26' : '#FFFFFF';
-  const surfaceBg = isDark ? '#2A2720' : '#E2EAE0';
+  const surfaceBg = isDark ? '#2A3022' : '#E2EAE0';
   const textPrimary = isDark ? '#F5EDD8' : '#1E2E1A';
-  const textSecondary = isDark ? '#8AAA82' : '#4A6A42';
-  const accent = '#617558';
-
-  const prompts = GRATITUDE_PROMPTS.sort(() => Math.random() - 0.5).slice(0, 3);
+  const textSecondary = isDark ? '#A8BFA1' : '#4A6A42';
+  const accent = isDark ? '#A8BFA1' : '#617558';
 
   const handleSave = async () => {
     const items = [text1, text2, text3].map((t) => t.trim()).filter(Boolean);

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
 import { getDb, generateId, nowIso } from '@/db/client';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 const CATEGORIES = ['morning', 'evening', 'gratitude', 'peace', 'strength', 'healing', 'family', 'forgiveness', 'guidance', 'personal'];
 const MOODS = [
@@ -19,10 +20,8 @@ const MOODS = [
 
 export default function NewJournalScreen() {
   const { t } = useTranslation();
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
+  const { isDark } = useResolvedTheme();
   const { recordActivity } = useUserStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');

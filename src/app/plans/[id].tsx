@@ -2,14 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft, CheckCircle, Circle, BookOpen } from '@/components/ui/LucideIcons';
+import { ArrowLeft, CheckCircle, Circle } from '@/components/ui/LucideIcons';
 import { ReadingPlanService, SAMPLE_PLANS } from '@/services/reading-plans';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 export default function PlanDetailScreen() {
+  const { isDark } = useResolvedTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [completedDays, setCompletedDays] = useState<number[]>([]);
 
   const plan = SAMPLE_PLANS.find(p => p.id === id) || SAMPLE_PLANS[0];
+
+  const bg = isDark ? '#1E1C18' : '#FFF9EE';
+  const cardBg = isDark ? '#2A2720' : '#F5EDD8';
+  const doneBg = isDark ? '#263323' : '#E2EAE0';
+  const doneBorder = isDark ? '#4C5D44' : '#96AA88';
+  const doneCheck = isDark ? '#A8BFA1' : '#617558';
+  const iconCircleBg = isDark ? '#1E1C18' : '#FFF9EE';
+  const textColor = isDark ? '#F5EDD8' : '#292B28';
+  const subTextColor = isDark ? '#B8AD97' : '#77766F';
+  const borderColor = isDark ? 'rgba(245,237,216,0.12)' : '#E8DFC9';
+  const iconColor = isDark ? '#F5EDD8' : '#292B28';
 
   useEffect(() => {
     if (id) {
@@ -29,33 +42,33 @@ export default function PlanDetailScreen() {
   const percent = Math.round((completedDays.length / (plan.total_days || 30)) * 100);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FFF9EE]">
+    <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
       {/* Header */}
-      <View className="flex-row items-center px-6 py-4 border-b border-[#E8DFC9]">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 rounded-full bg-[#F5EDD8] mr-3">
-          <ArrowLeft size={20} color="#292B28" />
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: borderColor }}>
+        <TouchableOpacity onPress={() => router.back()} style={{ padding: 8, borderRadius: 9999, backgroundColor: cardBg, marginRight: 12 }}>
+          <ArrowLeft size={20} color={iconColor} />
         </TouchableOpacity>
-        <View className="flex-1">
-          <Text className="text-xl font-bold text-[#292B28]" numberOfLines={1}>{plan.title}</Text>
-          <Text className="text-xs text-[#77766F]">{completedDays.length} of {plan.total_days} days completed ({percent}%)</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: textColor }} numberOfLines={1}>{plan.title}</Text>
+          <Text style={{ fontSize: 12, color: subTextColor }}>{completedDays.length} of {plan.total_days} days completed ({percent}%)</Text>
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView style={{ flex: 1, paddingHorizontal: 24, paddingTop: 16 }} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Progress Bar */}
-        <View className="bg-[#F5EDD8] rounded-2xl p-4 mb-6 border border-[#E8DFC9]">
-          <View className="flex-row justify-between mb-2">
-            <Text className="text-xs font-bold text-[#292B28]">Overall Progress</Text>
-            <Text className="text-xs font-bold text-[#D98262]">{percent}%</Text>
+        <View style={{ backgroundColor: cardBg, borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, borderColor }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: textColor }}>Overall Progress</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#D98262' }}>{percent}%</Text>
           </View>
-          <View className="h-3 bg-[#E8DFC9] rounded-full overflow-hidden">
-            <View className="h-full bg-[#F2B84B] rounded-full" style={{ width: `${percent}%` }} />
+          <View style={{ height: 12, backgroundColor: isDark ? '#1E1C18' : '#E8DFC9', borderRadius: 9999, overflow: 'hidden' }}>
+            <View style={{ height: '100%', backgroundColor: '#F2B84B', borderRadius: 9999, width: `${percent}%` }} />
           </View>
         </View>
 
-        <Text className="text-xs font-bold text-[#77766F] uppercase tracking-wider mb-4">Daily Schedule</Text>
+        <Text style={{ fontSize: 12, fontWeight: '700', color: subTextColor, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Daily Schedule</Text>
 
-        <View className="gap-3">
+        <View style={{ gap: 12 }}>
           {Array.from({ length: Math.min(30, plan.total_days) }).map((_, idx) => {
             const dayNum = idx + 1;
             const isDone = completedDays.includes(dayNum);
@@ -63,25 +76,32 @@ export default function PlanDetailScreen() {
               <TouchableOpacity
                 key={dayNum}
                 onPress={() => handleToggleDay(dayNum)}
-                className={`flex-row items-center justify-between p-4 rounded-2xl border ${
-                  isDone ? 'bg-[#E2EAE0] border-[#96AA88]' : 'bg-[#F5EDD8] border-[#E8DFC9]'
-                }`}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: 16,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  backgroundColor: isDone ? doneBg : cardBg,
+                  borderColor: isDone ? doneBorder : borderColor,
+                }}
               >
-                <View className="flex-row items-center flex-1 mr-3">
-                  <View className="w-8 h-8 rounded-full bg-[#FFF9EE] items-center justify-center mr-3 border border-[#E8DFC9]">
-                    <Text className="text-xs font-bold text-[#292B28]">{dayNum}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: iconCircleBg, alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: textColor }}>{dayNum}</Text>
                   </View>
                   <View>
-                    <Text className={`font-bold ${isDone ? 'text-[#1E2E1A] line-through' : 'text-[#292B28]'}`}>
+                    <Text style={{ fontWeight: '700', color: textColor, textDecorationLine: isDone ? 'line-through' : 'none' }}>
                       Day {dayNum} Reading
                     </Text>
-                    <Text className="text-xs text-[#77766F]">Genesis {dayNum * 2 - 1}-{dayNum * 2} • Psalm {dayNum}</Text>
+                    <Text style={{ fontSize: 12, color: subTextColor }}>Genesis {dayNum * 2 - 1}-{dayNum * 2} • Psalm {dayNum}</Text>
                   </View>
                 </View>
                 {isDone ? (
-                  <CheckCircle size={22} color="#617558" />
+                  <CheckCircle size={22} color={doneCheck} />
                 ) : (
-                  <Circle size={22} color="#B8AD97" />
+                  <Circle size={22} color={subTextColor} />
                 )}
               </TouchableOpacity>
             );

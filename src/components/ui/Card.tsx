@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, ViewProps, StyleProp, ViewStyle, useColorScheme } from 'react-native';
-import { useAppStore } from '@/store/app.store';
+import { View, ViewProps, StyleProp, ViewStyle } from 'react-native';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 export type CardVariant = 'default' | 'elevated' | 'outlined' | 'accent';
 
@@ -11,9 +11,7 @@ interface CardProps extends ViewProps {
 }
 
 export function Card({ variant = 'default', style, children, ...props }: CardProps) {
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
 
   const cardBg = isDark ? '#332F26' : '#FFFFFF';
   const borderColor = isDark ? '#423D32' : '#E8DFD1';

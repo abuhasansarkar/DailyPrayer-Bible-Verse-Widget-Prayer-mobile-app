@@ -10,6 +10,7 @@ import { useBible } from '@/hooks/use-bible';
 import { useUserStore } from '@/store/user.store';
 import { useToast } from '@/components/ui/Toast';
 import { Toast } from '@/components/ui/Toast';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface SearchResult {
   id: string;
@@ -21,9 +22,7 @@ interface SearchResult {
 
 export default function SearchScreen() {
   const { q: initialQuery } = useLocalSearchParams<{ q?: string }>();
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
   const { searchVerses } = useBible();
   const { toggleFavorite, isFavorite } = useUserStore();
   const { toastProps, show } = useToast();

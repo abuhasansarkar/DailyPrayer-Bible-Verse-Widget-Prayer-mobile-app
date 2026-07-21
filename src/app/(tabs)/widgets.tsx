@@ -43,6 +43,16 @@ export default function WidgetsScreen() {
               <AppIcon name="help" size={21} color={textPrimary} />
             </Pressable>
           </View>
+
+          {/* Dev Build Banner */}
+          <View style={{ marginTop: 12, backgroundColor: '#FEF3D1', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#F2B84B' }}>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#292B28' }}>
+              💡 Preview & Customization Mode
+            </Text>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: '#77766F', marginTop: 2 }}>
+              Customize and preview themes in-app. Native iOS & Android home screen widgets require an EAS Development Build.
+            </Text>
+          </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(350).delay(80)} style={{ paddingHorizontal: 20 }}>

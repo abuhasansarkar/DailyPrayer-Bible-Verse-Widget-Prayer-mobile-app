@@ -1,5 +1,5 @@
 import React from 'react';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface IconProps {
   size?: number;
@@ -115,3 +115,25 @@ export function X({ size = 24, color = '#292B28', style }: IconProps) {
 export function Music({ size = 24, color = '#292B28', style }: IconProps) {
   return <Feather name="music" size={size} color={color} style={style} />;
 }
+
+export function RefreshCw({ size = 24, color = '#292B28', style }: IconProps) {
+  return <Feather name="refresh-cw" size={size} color={color} style={style} />;
+}
+
+export function Copy({ size = 24, color = '#292B28', style }: IconProps) {
+  return <Feather name="copy" size={size} color={color} style={style} />;
+}
+
+export function Share2({ size = 24, color = '#292B28', style }: IconProps) {
+  return <Feather name="share-2" size={size} color={color} style={style} />;
+}
+
+export function Globe({ size = 24, color = '#292B28', style }: IconProps) {
+  return <Feather name="globe" size={size} color={color} style={style} />;
+}
+
+export function Crown({ size = 24, color = '#292B28', style }: IconProps) {
+  return <MaterialCommunityIcons name="crown-outline" size={size} color={color} style={style} />;
+}
+
+

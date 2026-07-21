@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useAppStore } from '@/store/app.store';
 import { BIBLE_BOOKS } from '@/constants/bibleBooks';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 export default function BibleIndexScreen() {
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
   const [search, setSearch] = useState('');
   const [testament, setTestament] = useState<'ALL' | 'OT' | 'NT'>('ALL');
 
@@ -38,7 +36,7 @@ export default function BibleIndexScreen() {
             onPress={() => router.back()}
             style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center' }}
           >
-            <Text style={{ fontSize: 18 }}>‹</Text>
+            <Text style={{ fontSize: 18, color: textPrimary }}>‹</Text>
           </Pressable>
           <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 24, color: textPrimary, letterSpacing: -0.5, flex: 1 }}>
             Bible
@@ -58,7 +56,7 @@ export default function BibleIndexScreen() {
             value={search}
             onChangeText={setSearch}
             placeholder="Search books..."
-            placeholderTextColor={textSecondary}
+            placeholderTextColor={isDark ? '#B8AD97' : '#B8B2AA'}
             style={{ flex: 1, fontFamily: 'Inter_400Regular', fontSize: 15, color: textPrimary }}
           />
           {search.length > 0 && (

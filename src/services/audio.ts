@@ -30,11 +30,31 @@ export interface AudioState {
 
 export type SoundscapeId = 'rain' | 'sanctuary' | 'waves' | 'organ' | null;
 
-export const SOUNDSCAPES: Record<NonNullable<SoundscapeId>, { title: string; icon: string; description: string }> = {
-  rain: { title: 'Gentle Rainfall', icon: '🌧️', description: 'Soft raindrops creating a soothing atmosphere' },
-  sanctuary: { title: 'Peaceful Sanctuary', icon: '🕊️', description: 'Deep calming resonance for sacred focus' },
-  waves: { title: 'Morning Waves', icon: '🌊', description: 'Rhythmic sea waves bringing stillness' },
-  organ: { title: 'Sacred Organ', icon: '🎹', description: 'Warm acoustic harmony for prayer' },
+export const SOUNDSCAPES: Record<NonNullable<SoundscapeId>, { title: string; icon: string; description: string; url: string }> = {
+  rain: {
+    title: 'Gentle Rainfall',
+    icon: '🌧️',
+    description: 'Soft raindrops creating a soothing atmosphere',
+    url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=soft-rain-ambient-111154.mp3',
+  },
+  sanctuary: {
+    title: 'Peaceful Sanctuary',
+    icon: '🕊️',
+    description: 'Deep calming resonance for sacred focus',
+    url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c886e30b.mp3?filename=meditation-piano-10821.mp3',
+  },
+  waves: {
+    title: 'Morning Waves',
+    icon: '🌊',
+    description: 'Rhythmic sea waves bringing stillness',
+    url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=ocean-waves-ambient-110624.mp3',
+  },
+  organ: {
+    title: 'Sacred Organ',
+    icon: '🎹',
+    description: 'Warm acoustic harmony for prayer',
+    url: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_88307223b3.mp3?filename=church-organ-pad-7193.mp3',
+  },
 };
 
 let activeSound: any = null;
@@ -95,7 +115,7 @@ export async function toggleSoundscape(soundscapeId: SoundscapeId): Promise<bool
       activeSound = null;
     }
 
-    if (!soundscapeId) {
+    if (!soundscapeId || !SOUNDSCAPES[soundscapeId]) {
       return false;
     }
 
@@ -105,8 +125,9 @@ export async function toggleSoundscape(soundscapeId: SoundscapeId): Promise<bool
       shouldDuckAndroid: true,
     });
 
+    const soundUrl = SOUNDSCAPES[soundscapeId].url;
     const { sound } = await Audio.Sound.createAsync(
-      { uri: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=soft-rain-ambient-111154.mp3' },
+      { uri: soundUrl },
       { shouldPlay: true, isLooping: true, volume: 0.5 }
     );
 

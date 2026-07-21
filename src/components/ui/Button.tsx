@@ -26,6 +26,8 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   rightIcon?: React.ReactNode;
 }
 
+import { useResolvedTheme } from '@/hooks/use-theme';
+
 export function Button({
   title,
   variant = 'primary',
@@ -40,6 +42,9 @@ export function Button({
   rightIcon,
   ...props
 }: ButtonProps) {
+  const { isDark } = useResolvedTheme();
+  const defaultTextColor = isDark ? '#F5EDD8' : '#292B28';
+
   const handlePress = (e: any) => {
     if (disabled || loading) return;
     if (haptic) {
@@ -101,8 +106,8 @@ export function Button({
     primary: { color: '#292B28' },
     secondary: { color: '#FFFFFF' },
     terracotta: { color: '#FFFFFF' },
-    outline: { color: '#292B28' },
-    ghost: { color: '#292B28' },
+    outline: { color: defaultTextColor },
+    ghost: { color: defaultTextColor },
   };
 
   return (

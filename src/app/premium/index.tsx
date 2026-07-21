@@ -9,6 +9,7 @@ import { useSubscriptionStore } from '@/store/subscription.store';
 import { purchasePackage, restorePurchases } from '@/services/revenuecat';
 import { Mascot } from '@/components/mascot/Mascot';
 import { Button } from '@/components/ui/Button';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 const FREE_FEATURES = [
   'Daily Bible verse',
@@ -34,10 +35,8 @@ const PREMIUM_FEATURES = [
 
 export default function PremiumScreen() {
   const { t } = useTranslation();
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
+  const { isDark } = useResolvedTheme();
   const { packages, isLoading, tier } = useSubscriptionStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
 
   const [selectedPeriod, setSelectedPeriod] = useState<'monthly' | 'annual'>('annual');
   const [purchasing, setPurchasing] = useState(false);

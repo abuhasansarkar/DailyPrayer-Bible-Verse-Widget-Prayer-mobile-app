@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { subDays, format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { DayActivity, StreakData, StreakMilestone, MilestoneDay } from '@/types/user';
 import type { StreakActivity } from '@/types/user';
 
@@ -43,12 +44,14 @@ const buildMilestones = (currentStreak: number): StreakMilestone[] => {
   );
 };
 
+const getIsoToday = (): string => format(new Date(), 'yyyy-MM-dd');
+
 const buildEmptyWeek = (): DayActivity[] => {
+  const now = new Date();
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
+    const d = subDays(now, 6 - i);
     return {
-      date: d.toISOString().split('T')[0]!,
+      date: format(d, 'yyyy-MM-dd'),
       activities: [],
       isComplete: false,
     };
@@ -73,9 +76,15 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ streak, milestones: buildMilestones(streak.currentStreak) }),
 
   recordActivity: async (activity) => {
-    const today = new Date().toISOString().split('T')[0]!;
+    const today = getIsoToday();
     let todayActivities: StreakActivity[] = [];
     let isNowComplete = false;
+    let activityAlreadyPresent = false;
+
+    const currentTodayDay = get().streak.thisWeek.find((d) => d.date === today);
+    if (currentTodayDay && currentTodayDay.activities.includes(activity)) {
+      activityAlreadyPresent = true;
+    }
 
     set((s) => {
       const week = s.streak.thisWeek.map((day) => {
@@ -104,6 +113,10 @@ export const useUserStore = create<UserState>((set, get) => ({
         milestones: buildMilestones(currentStreak),
       };
     });
+
+    if (activityAlreadyPresent) {
+      return;
+    }
 
     try {
       const { getDb } = await import('@/db/client');
@@ -170,16 +183,16 @@ export const useUserStore = create<UserState>((set, get) => ({
       );
 
       const completedDates = new Set(streakRows.filter((r) => r.is_complete === 1).map((r) => r.date));
-      const today = new Date().toISOString().split('T')[0]!;
+      const todayStr = getIsoToday();
 
       let currentStreak = 0;
       let checkDate = new Date();
-      if (!completedDates.has(today)) {
-        checkDate.setDate(checkDate.getDate() - 1);
+      if (!completedDates.has(todayStr)) {
+        checkDate = subDays(checkDate, 1);
       }
-      while (completedDates.has(checkDate.toISOString().split('T')[0]!)) {
+      while (completedDates.has(format(checkDate, 'yyyy-MM-dd'))) {
         currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
+        checkDate = subDays(checkDate, 1);
       }
 
       let longestStreak = 0;
@@ -189,9 +202,9 @@ export const useUserStore = create<UserState>((set, get) => ({
         if (i === 0) {
           tempStreak = 1;
         } else {
-          const prev = new Date(sortedDates[i - 1]!);
-          const curr = new Date(sortedDates[i]!);
-          const diffDays = Math.round((curr.getTime() - prev.getTime()) / (1000 * 3600 * 24));
+          const prev = parseISO(sortedDates[i - 1]!);
+          const curr = parseISO(sortedDates[i]!);
+          const diffDays = differenceInCalendarDays(curr, prev);
           if (diffDays === 1) tempStreak++;
           else tempStreak = 1;
         }
@@ -199,10 +212,10 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
       if (currentStreak > longestStreak) longestStreak = currentStreak;
 
+      const now = new Date();
       const thisWeek: DayActivity[] = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        const dateStr = d.toISOString().split('T')[0]!;
+        const d = subDays(now, 6 - i);
+        const dateStr = format(d, 'yyyy-MM-dd');
         const row = streakRows.find((r) => r.date === dateStr);
         const activities: StreakActivity[] = row ? parseJson(row.activities, []) : [];
         return {

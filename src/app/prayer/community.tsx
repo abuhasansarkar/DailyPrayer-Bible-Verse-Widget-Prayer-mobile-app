@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '@/store/app.store';
 import { getDb, generateId, nowIso } from '@/db/client';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface CommunityPrayer {
   id: string;
@@ -19,9 +20,7 @@ interface CommunityPrayer {
 const CATEGORIES = ['All', 'Healing', 'Peace', 'Family', 'Strength', 'Guidance'];
 
 export default function CommunityPrayerWallScreen() {
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
-  const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const { isDark } = useResolvedTheme();
 
   const [prayers, setPrayers] = useState<CommunityPrayer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');

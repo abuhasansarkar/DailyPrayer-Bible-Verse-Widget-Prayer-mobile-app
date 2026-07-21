@@ -57,9 +57,13 @@ async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
 
   // Ensure optional columns exist for legacy databases
   try {
-    await db.execAsync('ALTER TABLE journal_entries ADD COLUMN is_answered INTEGER NOT NULL DEFAULT 0;');
-  } catch {
-    // Column already exists
+    const cols = await db.getAllAsync<{ name: string }>('PRAGMA table_info(journal_entries);');
+    const hasIsAnswered = cols?.some((c) => c.name === 'is_answered');
+    if (!hasIsAnswered) {
+      await db.execAsync('ALTER TABLE journal_entries ADD COLUMN is_answered INTEGER NOT NULL DEFAULT 0;');
+    }
+  } catch (err) {
+    console.warn('[DB] Ensure column check warning:', err);
   }
 }
 

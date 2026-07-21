@@ -5,6 +5,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import type { StreakMilestone } from '@/types/user';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface MilestoneCelebrationProps {
   milestone: StreakMilestone | null;
@@ -12,10 +13,17 @@ interface MilestoneCelebrationProps {
 }
 
 export function MilestoneCelebration({ milestone, onDismiss }: MilestoneCelebrationProps) {
+  const { isDark } = useResolvedTheme();
   const scale = useSharedValue(0.5);
   const opacity = useSharedValue(0);
   const iconScale = useSharedValue(0);
   const bgOpacity = useSharedValue(0);
+
+  const cardBg = isDark ? '#2A2720' : '#FFF9EE';
+  const textPrimary = isDark ? '#F5EDD8' : '#292B28';
+  const textSecondary = isDark ? '#B8AD97' : '#77766F';
+  const buttonBg = isDark ? '#F2B84B' : '#292B28';
+  const buttonText = isDark ? '#292B28' : '#F5EDD8';
 
   useEffect(() => {
     if (milestone) {
@@ -52,7 +60,7 @@ export function MilestoneCelebration({ milestone, onDismiss }: MilestoneCelebrat
         paddingHorizontal: 32,
       }, overlayStyle]}>
         <Animated.View style={[{
-          backgroundColor: '#FFF9EE',
+          backgroundColor: cardBg,
           borderRadius: 28, padding: 36,
           alignItems: 'center', width: '100%',
           shadowColor: '#000',
@@ -71,7 +79,7 @@ export function MilestoneCelebration({ milestone, onDismiss }: MilestoneCelebrat
 
           {/* Title */}
           <Text style={{
-            fontFamily: 'Inter_700Bold', fontSize: 26, color: '#292B28',
+            fontFamily: 'Inter_700Bold', fontSize: 26, color: textPrimary,
             letterSpacing: -0.5, textAlign: 'center', marginBottom: 8,
           }}>
             {milestone.title}
@@ -90,7 +98,7 @@ export function MilestoneCelebration({ milestone, onDismiss }: MilestoneCelebrat
           {/* Message */}
           <Text style={{
             fontFamily: 'Lora_400Regular_Italic', fontSize: 16, lineHeight: 25,
-            color: '#77766F', textAlign: 'center', marginBottom: 32,
+            color: textSecondary, textAlign: 'center', marginBottom: 32,
           }}>
             "{milestone.message}"
           </Text>
@@ -99,18 +107,18 @@ export function MilestoneCelebration({ milestone, onDismiss }: MilestoneCelebrat
           <Pressable
             onPress={onDismiss}
             style={{
-              backgroundColor: '#292B28', borderRadius: 18,
+              backgroundColor: buttonBg, borderRadius: 18,
               paddingVertical: 16, paddingHorizontal: 40,
               width: '100%', alignItems: 'center',
             }}
           >
-            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: '#F5EDD8' }}>
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: buttonText }}>
               Keep going 🙏
             </Text>
           </Pressable>
 
           <Pressable onPress={onDismiss} style={{ marginTop: 16, padding: 8 }}>
-            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: '#77766F' }}>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: textSecondary }}>
               Dismiss
             </Text>
           </Pressable>

@@ -3,6 +3,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   Text,
   TextInput,
   useColorScheme,
@@ -26,6 +27,8 @@ import { StreakCard } from "@/components/streak/StreakCard";
 import { Toast, useToast } from "@/components/ui/Toast";
 import VerseImageGenerator from "@/components/verse/VerseImageGenerator";
 import { getDb, todayDate } from "@/db/client";
+import { useDailyVerse } from "@/hooks/use-daily-verse";
+import { useResolvedTheme } from "@/hooks/use-theme";
 import { useAppStore } from "@/store/app.store";
 import { useUserStore } from "@/store/user.store";
 import type { StreakMilestone } from "@/types/user";
@@ -50,8 +53,7 @@ function getGreeting(name?: string): string {
 
 export default function TodayScreen() {
   const { t } = useTranslation();
-  const systemScheme = useColorScheme();
-  const { colorScheme } = useAppStore();
+  const { isDark } = useResolvedTheme();
   const {
     streak,
     milestones,
@@ -60,8 +62,6 @@ export default function TodayScreen() {
     toggleFavorite,
     isFavorite,
   } = useUserStore();
-  const isDark =
-    (colorScheme === "system" ? systemScheme : colorScheme) === "dark";
   const { toastProps, show } = useToast();
 
   const [dailyVerse, setDailyVerse] = useState<DailyVerseRow | null>(null);
@@ -635,7 +635,15 @@ export default function TodayScreen() {
                   <Pressable
                     onPress={async (e) => {
                       e.stopPropagation();
-                      setShowCardStudio(true);
+                      if (dailyVerse) {
+                        try {
+                          await Share.share({
+                            message: `"${dailyVerse.verse_text}" — ${dailyVerse.verse_reference}`,
+                          });
+                        } catch {
+                          // Ignore share dismiss
+                        }
+                      }
                     }}
                     style={{
                       width: 36,
@@ -814,7 +822,7 @@ export default function TodayScreen() {
                   style={{
                     fontFamily: "Inter_600SemiBold",
                     fontSize: 12,
-                    color: "#617558",
+                    color: isDark ? "#A8BFA1" : "#617558",
                   }}
                 >
                   History →
@@ -825,7 +833,7 @@ export default function TodayScreen() {
               value={gratitudeText}
               onChangeText={setGratitudeText}
               placeholder={t("today.gratitudePlaceholder")}
-              placeholderTextColor={isDark ? "#6A7264" : "#96AA88"}
+              placeholderTextColor={isDark ? "#A8BFA1" : "#7A9170"}
               multiline
               style={{
                 fontFamily: "Inter_400Regular",

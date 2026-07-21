@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 import { getDb } from '@/db/client';
 
 export interface UserExportData {
@@ -52,6 +53,32 @@ export class ExportImportService {
       console.error('[ExportImportService] Export failed:', e);
     }
     return false;
+  }
+
+  /**
+   * Open native document picker to select a backup file and import it.
+   */
+  static async pickAndImportFile(): Promise<{ success: boolean; importedCount: number; canceled?: boolean }> {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/json', '*/*'],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return { success: false, importedCount: 0, canceled: true };
+      }
+
+      const fileUri = result.assets[0].uri;
+      const fileContent = await FileSystem.readAsStringAsync(fileUri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      return await this.importUserData(fileContent);
+    } catch (e) {
+      console.error('[ExportImportService] Pick and import failed:', e);
+      return { success: false, importedCount: 0 };
+    }
   }
 
   /**

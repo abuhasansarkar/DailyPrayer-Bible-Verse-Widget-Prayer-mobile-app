@@ -77,26 +77,26 @@ export default function CommunityScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FFF9EE]">
+    <SafeAreaView className="flex-1 bg-[#FFF9EE] dark:bg-[#1E1C18]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-6 py-4 border-b border-[#E8DFC9]">
+      <View className="flex-row items-center justify-between px-6 py-4 border-b border-[#E8DFC9] dark:border-[#332E25]">
         <View className="flex-row items-center">
-          <View className="w-10 h-10 rounded-full bg-[#FEF3D1] items-center justify-center mr-3">
+          <View className="w-10 h-10 rounded-full bg-[#FEF3D1] dark:bg-[#332A18] items-center justify-center mr-3">
             <Users size={20} color="#F2B84B" />
           </View>
           <View>
-            <Text className="text-xl font-bold text-[#292B28]">Prayer Wall</Text>
-            <Text className="text-xs text-[#77766F]">Join believers worldwide in prayer</Text>
+            <Text className="text-xl font-bold text-[#292B28] dark:text-[#F5EDD8]">Prayer Wall</Text>
+            <Text className="text-xs text-[#77766F] dark:text-[#A09E95]">Join believers worldwide in prayer</Text>
           </View>
         </View>
       </View>
 
       <ScrollView className="flex-1 px-6 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Post Input */}
-        <View className="bg-[#F5EDD8] rounded-2xl p-4 mb-6 border border-[#E8DFC9]">
-          <Text className="text-xs font-bold text-[#77766F] uppercase tracking-wider mb-2">Share a Prayer Request</Text>
+        <View className="bg-[#F5EDD8] dark:bg-[#2A2720] rounded-2xl p-4 mb-6 border border-[#E8DFC9] dark:border-[#332E25]">
+          <Text className="text-xs font-bold text-[#77766F] dark:text-[#A09E95] uppercase tracking-wider mb-2">Share a Prayer Request</Text>
           <TextInput
-            className="bg-[#FFF9EE] rounded-xl p-3 text-[#292B28] text-sm mb-3 border border-[#E8DFC9]"
+            className="bg-[#FFF9EE] dark:bg-[#1E1C18] rounded-xl p-3 text-[#292B28] dark:text-[#F5EDD8] text-sm mb-3 border border-[#E8DFC9] dark:border-[#332E25]"
             placeholder="How can the community pray for you today?"
             placeholderTextColor="#B8AD97"
             multiline
@@ -108,43 +108,49 @@ export default function CommunityScreen() {
             onPress={handlePostRequest}
             className="bg-[#F2B84B] rounded-xl py-3 items-center justify-center flex-row shadow-sm"
           >
-            <Send size={16} color="#292B28" className="mr-2" />
+            <View style={{ marginRight: 8 }}>
+              <Send size={16} color="#292B28" />
+            </View>
             <Text className="font-bold text-[#292B28]">Post Request</Text>
           </TouchableOpacity>
         </View>
 
-        <Text className="text-xs font-bold text-[#77766F] uppercase tracking-wider mb-4">Recent Prayer Requests</Text>
+        <Text className="text-xs font-bold text-[#77766F] dark:text-[#A09E95] uppercase tracking-wider mb-4">Recent Prayer Requests</Text>
 
         <View className="gap-4">
           {prayers.map(item => (
-            <View key={item.id} className="bg-[#F5EDD8] rounded-2xl p-5 border border-[#E8DFC9]">
+            <View key={item.id} className="bg-[#F5EDD8] dark:bg-[#2A2720] rounded-2xl p-5 border border-[#E8DFC9] dark:border-[#332E25]">
               <View className="flex-row justify-between items-center mb-2">
                 <View className="flex-row items-center">
-                  <View className="w-8 h-8 rounded-full bg-[#E2EAE0] items-center justify-center mr-2">
-                    <Text className="text-xs font-bold text-[#1E2E1A]">{item.author[0]}</Text>
+                  <View className="w-8 h-8 rounded-full bg-[#E2EAE0] dark:bg-[#203318] items-center justify-center mr-2">
+                    <Text className="text-xs font-bold text-[#1E2E1A] dark:text-[#96AA88]">{item.author[0]}</Text>
                   </View>
                   <View>
-                    <Text className="font-bold text-[#292B28] text-sm">{item.author}</Text>
-                    <Text className="text-[10px] text-[#77766F]">{item.location} • {item.timeAgo}</Text>
+                    <Text className="font-bold text-[#292B28] dark:text-[#F5EDD8] text-sm">{item.author}</Text>
+                    <Text className="text-[10px] text-[#77766F] dark:text-[#A09E95]">{item.location} • {item.timeAgo}</Text>
                   </View>
                 </View>
               </View>
 
-              <Text className="text-sm text-[#292B28] leading-relaxed mb-4">{item.request}</Text>
+              <Text className="text-sm text-[#292B28] dark:text-[#F5EDD8] leading-relaxed mb-4">{item.request}</Text>
 
               <TouchableOpacity
                 onPress={() => handlePray(item.id)}
                 className={`flex-row items-center justify-between p-3 rounded-xl border ${
-                  item.isPrayed ? 'bg-[#FEF3D1] border-[#F2B84B]' : 'bg-[#FFF9EE] border-[#E8DFC9]'
+                  item.isPrayed
+                    ? 'bg-[#FEF3D1] dark:bg-[#332A18] border-[#F2B84B]'
+                    : 'bg-[#FFF9EE] dark:bg-[#1E1C18] border-[#E8DFC9] dark:border-[#332E25]'
                 }`}
               >
                 <View className="flex-row items-center">
-                  <Heart size={18} color={item.isPrayed ? '#D98262' : '#77766F'} fill={item.isPrayed ? '#D98262' : 'none'} className="mr-2" />
-                  <Text className={`text-xs font-bold ${item.isPrayed ? 'text-[#D98262]' : 'text-[#77766F]'}`}>
+                  <View style={{ marginRight: 8 }}>
+                    <Heart size={18} color={item.isPrayed ? '#D98262' : '#77766F'} fill={item.isPrayed ? '#D98262' : 'none'} />
+                  </View>
+                  <Text className={`text-xs font-bold ${item.isPrayed ? 'text-[#D98262]' : 'text-[#77766F] dark:text-[#A09E95]'}`}>
                     {item.isPrayed ? 'You Prayed For This' : 'I Prayed For This'}
                   </Text>
                 </View>
-                <Text className="text-xs font-bold text-[#292B28]">{item.prayedCount} Believers</Text>
+                <Text className="text-xs font-bold text-[#292B28] dark:text-[#F5EDD8]">{item.prayedCount} Believers</Text>
               </TouchableOpacity>
             </View>
           ))}

@@ -2,6 +2,7 @@ import {
   BookOpen,
   CheckCircle,
   ChevronRight,
+  Copy,
   Heart,
   RefreshCw,
   Send,
@@ -29,6 +30,8 @@ import {
   useColorScheme,
   View,
 } from "react-native";
+import { useResolvedTheme } from "@/hooks/use-theme";
+
 let ClipboardModule: any = null;
 try {
   ClipboardModule = require("expo-clipboard");
@@ -77,7 +80,7 @@ const PRAYER_TOPICS = [
 ];
 
 export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
-  const isDark = useColorScheme() === "dark";
+  const { isDark } = useResolvedTheme();
   const [activeTab, setActiveTab] = useState<FeatureTab>("prayer");
   const [selectedModel, setSelectedModel] = useState<OpenCodeZenModelId>(
     "deepseek-v4-flash-free",
@@ -460,7 +463,7 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
                         {copied ? (
                           <CheckCircle size={14} color="#2E7D32" />
                         ) : (
-                          <RefreshCw size={14} color={textColor} />
+                          <Copy size={14} color={textColor} />
                         )}
                         <Text
                           style={[
