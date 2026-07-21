@@ -515,7 +515,7 @@ export default function TodayScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={() => router.push("/settings")}
+              onPress={() => router.push("/settings/screen")}
               style={{
                 width: 40,
                 height: 40,

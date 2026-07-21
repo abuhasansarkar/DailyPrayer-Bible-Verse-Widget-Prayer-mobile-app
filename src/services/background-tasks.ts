@@ -1,39 +1,54 @@
-import * as TaskManager from 'expo-task-manager';
-import * as BackgroundFetch from 'expo-background-fetch';
 import { WidgetBridgeService } from './widget-bridge';
-import { getDailyVerse } from './bible-api';
+import { getDailyVerse } from './daily-verse-rotation';
 
 export const DAILY_VERSE_REFRESH_TASK = 'DAILY_VERSE_REFRESH_TASK';
 
-// Define the background task in global context
-TaskManager.defineTask(DAILY_VERSE_REFRESH_TASK, async () => {
+function initTaskManager() {
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const verse = await getDailyVerse(todayStr);
+    const TaskManager = require('expo-task-manager');
+    const BackgroundFetch = require('expo-background-fetch');
 
-    if (verse) {
-      await WidgetBridgeService.updateWidgetData({
-        verseText: verse.text,
-        verseReference: `${verse.book} ${verse.chapter}:${verse.verse}`,
-        translation: verse.translation || 'WEB',
-        dateString: todayStr,
+    if (TaskManager && typeof TaskManager.defineTask === 'function') {
+      TaskManager.defineTask(DAILY_VERSE_REFRESH_TASK, async () => {
+        try {
+          const todayStr = new Date().toISOString().split('T')[0];
+          const verse = await getDailyVerse(todayStr);
+
+          if (verse) {
+            await WidgetBridgeService.updateWidgetData({
+              verseText: verse.text,
+              verseReference: `${verse.book} ${verse.chapter}:${verse.verse}`,
+              translation: verse.translation || 'KJV',
+              dateString: todayStr,
+            });
+            console.log('[BackgroundTask] Successfully refreshed Daily Verse for widget:', todayStr);
+            return BackgroundFetch?.BackgroundFetchResult?.NewData ?? 1;
+          }
+
+          return BackgroundFetch?.BackgroundFetchResult?.NoData ?? 2;
+        } catch (error) {
+          console.error('[BackgroundTask] Error executing daily verse refresh task:', error);
+          return BackgroundFetch?.BackgroundFetchResult?.Failed ?? 3;
+        }
       });
-      console.log('[BackgroundTask] Successfully refreshed Daily Verse for widget:', todayStr);
-      return BackgroundFetch.BackgroundFetchResult.NewData;
     }
-
-    return BackgroundFetch.BackgroundFetchResult.NoData;
-  } catch (error) {
-    console.error('[BackgroundTask] Error executing daily verse refresh task:', error);
-    return BackgroundFetch.BackgroundFetchResult.Failed;
+  } catch {
+    // expo-task-manager or expo-background-fetch native modules not available
   }
-});
+}
+
+initTaskManager();
 
 /**
  * Register the background task with the OS background fetch manager.
  */
 export async function registerDailyVerseBackgroundTask() {
   try {
+    const TaskManager = require('expo-task-manager');
+    const BackgroundFetch = require('expo-background-fetch');
+
+    if (!TaskManager || !BackgroundFetch) return;
+
     const isRegistered = await TaskManager.isTaskRegisteredAsync(DAILY_VERSE_REFRESH_TASK);
     if (!isRegistered) {
       await BackgroundFetch.registerTaskAsync(DAILY_VERSE_REFRESH_TASK, {
@@ -43,7 +58,7 @@ export async function registerDailyVerseBackgroundTask() {
       });
       console.log('[BackgroundTask] Registered DAILY_VERSE_REFRESH_TASK successfully.');
     }
-  } catch (err) {
-    console.warn('[BackgroundTask] Task registration warning:', err);
+  } catch {
+    // Graceful fallback when running in Expo Go or environment without native background task support
   }
 }

@@ -11,6 +11,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FloatingAiButton } from "@/components/ai/FloatingAiButton";
 
 type TabBarProps = {
   state: { index: number; routes: { key: string; name: string }[] };
@@ -123,6 +124,7 @@ function DailyPrayerTabBar({ state, navigation }: TabBarProps) {
   const tabMeta: Record<string, { label: string; icon: AppIconName }> = {
     index: { label: t("tabs.today"), icon: "home" },
     explore: { label: t("tabs.explore"), icon: "compass" },
+    community: { label: "Wall", icon: "heart" },
     pray: { label: t("tabs.pray"), icon: "pray" },
     journal: { label: t("tabs.journal"), icon: "journal" },
     library: { label: t("tabs.library"), icon: "library" },
@@ -208,15 +210,21 @@ function DailyPrayerTabBar({ state, navigation }: TabBarProps) {
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <DailyPrayerTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="explore" />
-      <Tabs.Screen name="pray" />
-      <Tabs.Screen name="journal" />
-      <Tabs.Screen name="library" />
-    </Tabs>
+    <View style={{ flex: 1 }}>
+      <Tabs
+        tabBar={(props) => <DailyPrayerTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="explore" />
+        <Tabs.Screen name="community" />
+        <Tabs.Screen name="pray" />
+        <Tabs.Screen name="journal" />
+        <Tabs.Screen name="library" />
+      </Tabs>
+      <FloatingAiButton />
+    </View>
   );
 }

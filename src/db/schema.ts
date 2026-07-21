@@ -99,6 +99,28 @@ export const CREATE_TABLES_SQL = `
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  -- Reading Plans
+  CREATE TABLE IF NOT EXISTS reading_plans (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'general',
+    total_days INTEGER NOT NULL DEFAULT 30,
+    is_featured INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  -- User Reading Plan Progress
+  CREATE TABLE IF NOT EXISTS user_reading_plan_progress (
+    id TEXT PRIMARY KEY NOT NULL,
+    plan_id TEXT NOT NULL,
+    current_day INTEGER NOT NULL DEFAULT 1,
+    completed_days TEXT NOT NULL DEFAULT '[]',
+    is_completed INTEGER NOT NULL DEFAULT 0,
+    last_read_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (plan_id) REFERENCES reading_plans(id)
+  );
+
   -- Devotionals (admin-managed)
   CREATE TABLE IF NOT EXISTS devotionals (
     id TEXT PRIMARY KEY NOT NULL,

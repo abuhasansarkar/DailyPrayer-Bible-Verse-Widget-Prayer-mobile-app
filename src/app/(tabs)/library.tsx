@@ -83,7 +83,7 @@ export default function LibraryScreen() {
             >
               {t("library.title")}
             </Text>
-            <Pressable onPress={() => router.push("/settings")}>
+            <Pressable onPress={() => router.push("/settings/screen")}>
               <View
                 style={{
                   width: 40,

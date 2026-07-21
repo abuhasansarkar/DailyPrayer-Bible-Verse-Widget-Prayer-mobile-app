@@ -119,6 +119,28 @@ export default function RootLayout() {
           runFullSync().catch(console.warn);
         }
 
+        // 8. Register Background Tasks & Sync Initial OS Widget Payload
+        try {
+          const { registerDailyVerseBackgroundTask } = await import('@/services/background-tasks');
+          const { WidgetBridgeService } = await import('@/services/widget-bridge');
+          const { getDailyVerse } = await import('@/services/daily-verse-rotation');
+
+          registerDailyVerseBackgroundTask().catch(console.warn);
+
+          const todayStr = new Date().toISOString().split('T')[0];
+          const todayVerse = await getDailyVerse(todayStr);
+          if (todayVerse) {
+            WidgetBridgeService.updateWidgetData({
+              verseText: todayVerse.text,
+              verseReference: `${todayVerse.book} ${todayVerse.chapter}:${todayVerse.verse}`,
+              translation: todayVerse.translation || 'KJV',
+              dateString: todayStr,
+            }).catch(console.warn);
+          }
+        } catch (err) {
+          console.warn('[RootLayout] Widget/BackgroundTask init warning:', err);
+        }
+
         // 8. Set up notification tap deep-link handler
         try {
           const Constants = (await import('expo-constants')).default;
@@ -240,7 +262,7 @@ export default function RootLayout() {
                 options={{ presentation: 'modal' }}
               />
               {/* Settings */}
-              <Stack.Screen name="settings/index" />
+              <Stack.Screen name="settings/screen" />
               {/* Catch-all unmatched route handler */}
               <Stack.Screen name="+not-found" />
             </Stack>
