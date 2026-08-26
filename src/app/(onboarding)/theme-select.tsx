@@ -63,7 +63,7 @@ export default function ThemeSelectScreen() {
                   {/* Mini verse preview */}
                   <View style={{ backgroundColor: theme.surface, padding: 12, borderRadius: 12 }}>
                     <Text style={{ fontFamily: 'Lora_400Regular', fontSize: 13, color: theme.text, lineHeight: 20, fontStyle: 'italic' }}>
-                      "For I know the plans I have for you..."
+                      &quot;For I know the plans I have for you...&quot;
                     </Text>
                     <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: theme.text, opacity: 0.6, marginTop: 4 }}>
                       Jeremiah 29:11

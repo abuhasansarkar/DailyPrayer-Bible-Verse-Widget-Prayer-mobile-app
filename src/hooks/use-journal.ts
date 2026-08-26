@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { getDb, generateId, nowIso } from '@/db/client';
+import { useAsyncData } from './use-async-data';
 
 export type JournalType = 'prayer' | 'gratitude' | 'reflection';
 
@@ -20,14 +21,16 @@ export interface GratitudeEntry {
   created_at: string;
 }
 
-export function useJournal(type?: JournalType) {
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [gratitude, setGratitude] = useState<GratitudeEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+interface JournalData {
+  entries: JournalEntry[];
+  gratitude: GratitudeEntry[];
+}
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
+const EMPTY: JournalData = { entries: [], gratitude: [] };
+
+export function useJournal(type?: JournalType) {
+  const fetchJournal = useCallback(async (): Promise<JournalData> => {
+    {
       const db = getDb();
 
       const query = type
@@ -37,6 +40,8 @@ export function useJournal(type?: JournalType) {
       const rows = type
         ? await db.getAllAsync<JournalEntry>(query, [type])
         : await db.getAllAsync<JournalEntry>(query);
+
+      let entries: JournalEntry[];
 
       // Merge personal_prayers if type is null or 'prayer'
       if (!type || type === 'prayer') {
@@ -59,28 +64,26 @@ export function useJournal(type?: JournalType) {
         const merged = [...rows, ...mapped].sort(
           (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-        setEntries(merged);
+        entries = merged;
       } else {
-        setEntries(rows);
+        entries = rows;
       }
 
       // Load gratitude entries separately
       const gratRows = await db.getAllAsync<{ id: string; items: string; created_at: string }>(
         'SELECT id, items, created_at FROM gratitude_entries ORDER BY created_at DESC LIMIT 30'
       );
-      setGratitude(gratRows.map((r) => ({
+      const gratitude = gratRows.map((r) => ({
         id: r.id,
-        items: (() => { try { return JSON.parse(r.items); } catch { return [r.items]; } })(),
+        items: (() => { try { return JSON.parse(r.items) as string[]; } catch { return [r.items]; } })(),
         created_at: r.created_at,
-      })));
-    } catch (e) {
-      console.warn('[useJournal] load error:', e);
-    } finally {
-      setLoading(false);
+      }));
+
+      return { entries, gratitude };
     }
   }, [type]);
 
-  useEffect(() => { load(); }, [load]);
+  const { data, loading, refresh, setData } = useAsyncData(type ?? '__all__', fetchJournal, EMPTY);
 
   const createEntry = useCallback(async (data: {
     type: JournalType;
@@ -97,13 +100,13 @@ export function useJournal(type?: JournalType) {
          VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
         [id, data.type, data.title, data.body, data.mood ?? null, now, now]
       );
-      await load();
+      await refresh();
       return id;
     } catch (e) {
       console.warn('[useJournal] createEntry error:', e);
       return null;
     }
-  }, [load]);
+  }, [refresh]);
 
   const updateEntry = useCallback(async (id: string, data: Partial<Pick<JournalEntry, 'title' | 'body' | 'mood' | 'is_answered'>>) => {
     try {
@@ -114,21 +117,24 @@ export function useJournal(type?: JournalType) {
         `UPDATE journal_entries SET ${fields}, updated_at = ? WHERE id = ?`,
         [...values, nowIso(), id]
       );
-      await load();
+      await refresh();
     } catch (e) {
       console.warn('[useJournal] updateEntry error:', e);
     }
-  }, [load]);
+  }, [refresh]);
 
   const deleteEntry = useCallback(async (id: string) => {
     try {
       const db = getDb();
       await db.runAsync('DELETE FROM journal_entries WHERE id = ?', [id]);
-      setEntries((prev) => prev.filter((e) => e.id !== id));
+      setData((current) => ({
+        ...current,
+        entries: current.entries.filter((e) => e.id !== id),
+      }));
     } catch (e) {
       console.warn('[useJournal] deleteEntry error:', e);
     }
-  }, []);
+  }, [setData]);
 
   const addGratitude = useCallback(async (items: string[]) => {
     try {
@@ -138,13 +144,22 @@ export function useJournal(type?: JournalType) {
         'INSERT INTO gratitude_entries (id, items, created_at) VALUES (?, ?, datetime("now"))',
         [id, JSON.stringify(items)]
       );
-      await load();
+      await refresh();
       return id;
     } catch (e) {
       console.warn('[useJournal] addGratitude error:', e);
       return null;
     }
-  }, [load]);
+  }, [refresh]);
 
-  return { entries, gratitude, loading, refresh: load, createEntry, updateEntry, deleteEntry, addGratitude };
+  return {
+    entries: data.entries,
+    gratitude: data.gratitude,
+    loading,
+    refresh,
+    createEntry,
+    updateEntry,
+    deleteEntry,
+    addGratitude,
+  };
 }

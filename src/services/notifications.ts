@@ -81,7 +81,9 @@ export async function scheduleReminder(reminder: PrayerReminder): Promise<string
       await cancelReminder(reminder.notificationId);
     }
 
-    const daysOfWeek = reminder.daysOfWeek;
+    // App convention is 0=Sun..6=Sat (see PrayerReminder.daysOfWeek); anything
+    // outside that range would produce an invalid expo-notifications weekday.
+    const daysOfWeek = reminder.daysOfWeek.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
     const [hourStr, minuteStr] = reminder.time.split(':');
     const hour = parseInt(hourStr ?? '7', 10);
     const minute = parseInt(minuteStr ?? '0', 10);
@@ -162,7 +164,7 @@ export async function syncRemindersFromDb(): Promise<void> {
         id: row.id,
         title: row.title,
         time: row.time,
-        daysOfWeek: parseJson<number[]>(row.days_of_week, [1, 2, 3, 4, 5, 6, 7]),
+        daysOfWeek: parseJson<number[]>(row.days_of_week, [0, 1, 2, 3, 4, 5, 6]),
         type: row.type as PrayerReminder['type'],
         isActive: row.is_active === 1,
         soundEnabled: row.sound_enabled === 1,

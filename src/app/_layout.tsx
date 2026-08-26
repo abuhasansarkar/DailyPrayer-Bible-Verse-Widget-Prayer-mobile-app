@@ -255,6 +255,7 @@ export default function RootLayout() {
                 <Stack.Screen name="gratitude/index" />
                 {/* Bible */}
                 <Stack.Screen name="bible/index" />
+                <Stack.Screen name="bible/compare" />
                 <Stack.Screen name="bible/[book]/[chapter]" />
                 {/* Search */}
                 <Stack.Screen name="search" options={{ presentation: 'modal' }} />
@@ -275,7 +276,10 @@ export default function RootLayout() {
                   options={{ presentation: 'modal' }}
                 />
                 {/* Settings */}
+                <Stack.Screen name="settings/index" />
                 <Stack.Screen name="settings/screen" />
+                {/* Prayer wall also reachable as a stack route */}
+                <Stack.Screen name="prayer/community" />
                 {/* Catch-all unmatched route handler */}
                 <Stack.Screen name="+not-found" />
               </Stack>

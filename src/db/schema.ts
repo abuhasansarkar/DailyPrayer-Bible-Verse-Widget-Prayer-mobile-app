@@ -1,4 +1,4 @@
-import { SQLiteDatabase } from 'expo-sqlite';
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Database Schema — DailyPrayer
@@ -17,7 +17,7 @@ export const CREATE_TABLES_SQL = `
     chapter INTEGER NOT NULL,
     verse_number INTEGER NOT NULL,
     text TEXT NOT NULL,
-    translation TEXT NOT NULL DEFAULT 'NIV',
+    translation TEXT NOT NULL DEFAULT 'KJV',
     topics TEXT NOT NULL DEFAULT '[]',
     is_featured INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -140,7 +140,7 @@ export const CREATE_TABLES_SQL = `
     id TEXT PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
     time TEXT NOT NULL,
-    days_of_week TEXT NOT NULL DEFAULT '[1,2,3,4,5,6,7]',
+    days_of_week TEXT NOT NULL DEFAULT '[0,1,2,3,4,5,6]',
     type TEXT NOT NULL DEFAULT 'custom',
     is_active INTEGER NOT NULL DEFAULT 1,
     sound_enabled INTEGER NOT NULL DEFAULT 1,
@@ -192,7 +192,7 @@ export const CREATE_TABLES_SQL = `
     show_mascot INTEGER NOT NULL DEFAULT 0,
     show_app_logo INTEGER NOT NULL DEFAULT 1,
     custom_photo_uri TEXT,
-    verse_translation TEXT NOT NULL DEFAULT 'NIV',
+    verse_translation TEXT NOT NULL DEFAULT 'KJV',
     is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -203,7 +203,7 @@ export const CREATE_TABLES_SQL = `
     display_name TEXT,
     avatar_uri TEXT,
     goals TEXT NOT NULL DEFAULT '[]',
-    preferred_translation TEXT NOT NULL DEFAULT 'NIV',
+    preferred_translation TEXT NOT NULL DEFAULT 'KJV',
     preferred_categories TEXT NOT NULL DEFAULT '[]',
     app_theme TEXT NOT NULL DEFAULT 'system',
     font_size TEXT NOT NULL DEFAULT 'default',
@@ -233,7 +233,6 @@ export const CREATE_TABLES_SQL = `
   CREATE INDEX IF NOT EXISTS idx_verses_book_chapter ON verses(book, chapter);
   CREATE INDEX IF NOT EXISTS idx_guided_prayers_cat ON guided_prayers(category);
 `;
-
 
 export const MIGRATION_2_SQL = `
   CREATE TABLE IF NOT EXISTS verse_highlights (

@@ -7,8 +7,6 @@ import Animated, {
   withTiming,
   withDelay,
   withSpring,
-  withSequence,
-  runOnJS,
   Easing,
 } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';

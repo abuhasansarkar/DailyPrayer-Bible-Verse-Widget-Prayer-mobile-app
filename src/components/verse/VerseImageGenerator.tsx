@@ -1,9 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, Modal, Pressable, ScrollView, StyleSheet, Share } from 'react-native';
+import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
+import { FREE_LIMITS, useIsPremium } from '@/constants/entitlements';
 
-let ViewShotComponent: any = View;
+/** Minimal surface of react-native-view-shot's ref that this screen uses. */
+type ViewShotHandle = { capture?: () => Promise<string> };
+
+// Loaded defensively: capture is a native module, and the modal should still
+// open (falling back to text sharing) if it is unavailable.
+let ViewShotComponent: React.ComponentType<any> = View;
 try {
   ViewShotComponent = require('react-native-view-shot').default || require('react-native-view-shot');
 } catch {
@@ -35,9 +42,10 @@ export default function VerseImageGenerator({
   onClose,
   verseText,
   reference,
-  translation = 'NIV',
+  translation = 'KJV',
 }: VerseImageGeneratorProps) {
-  const viewShotRef = useRef<ViewShot>(null);
+  const viewShotRef = useRef<ViewShotHandle>(null);
+  const isPremiumUser = useIsPremium();
   const [themeId, setThemeId] = useState<ThemeId>('gold');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('story');
   const [fontStyle, setFontStyle] = useState<FontStyle>('serif');
@@ -118,7 +126,7 @@ export default function VerseImageGenerator({
                     fontStyle === 'serif' ? styles.fontSerif : styles.fontSans,
                   ]}
                 >
-                  "{verseText}"
+                  &quot;{verseText}&quot;
                 </Text>
               </View>
 
@@ -134,22 +142,32 @@ export default function VerseImageGenerator({
             {/* Theme Selector */}
             <Text style={styles.controlLabel}>Color Palette</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.themeRow}>
-              {(Object.keys(THEMES) as ThemeId[]).map((tId) => (
-                <Pressable
-                  key={tId}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setThemeId(tId);
-                  }}
-                  style={[
-                    styles.themeChip,
-                    { backgroundColor: THEMES[tId].bg },
-                    themeId === tId && styles.selectedChip,
-                  ]}
-                >
-                  <Text style={[styles.themeChipText, { color: THEMES[tId].text }]}>{THEMES[tId].name}</Text>
-                </Pressable>
-              ))}
+              {(Object.keys(THEMES) as ThemeId[]).map((tId, index) => {
+                const locked = !isPremiumUser && index >= FREE_LIMITS.shareThemes;
+                return (
+                  <Pressable
+                    key={tId}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      if (locked) {
+                        onClose();
+                        router.push('/premium');
+                        return;
+                      }
+                      setThemeId(tId);
+                    }}
+                    style={[
+                      styles.themeChip,
+                      { backgroundColor: THEMES[tId].bg },
+                      themeId === tId && styles.selectedChip,
+                    ]}
+                  >
+                    <Text style={[styles.themeChipText, { color: THEMES[tId].text }]}>
+                      {locked ? `🔒 ${THEMES[tId].name}` : THEMES[tId].name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
 
             {/* Format Selector */}

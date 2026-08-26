@@ -1,6 +1,23 @@
 // ── Verse Types ───────────────────────────────────────────────────────────────
 
-export type BibleTranslation = 'ESV' | 'NIV' | 'KJV' | 'NLT' | 'NKJV' | 'CSB' | 'MSG' | 'AMP';
+/**
+ * Translations the app is licensed to display.
+ *
+ * All three are public domain. Modern translations (NIV, ESV, NLT, CSB, NKJV,
+ * MSG, AMP) are copyrighted and cannot be redistributed without a licence
+ * agreement from their publishers — do not add them here without one.
+ */
+export type BibleTranslation = 'KJV' | 'ASV' | 'WEB';
+
+export const BIBLE_TRANSLATIONS: readonly {
+  id: BibleTranslation;
+  name: string;
+  apiVersion: string;
+}[] = [
+  { id: 'KJV', name: 'King James Version', apiVersion: 'en-kjv' },
+  { id: 'ASV', name: 'American Standard Version', apiVersion: 'en-asv' },
+  { id: 'WEB', name: 'World English Bible', apiVersion: 'en-web' },
+] as const;
 
 export type BibleBook =
   | 'Genesis' | 'Exodus' | 'Leviticus' | 'Numbers' | 'Deuteronomy'

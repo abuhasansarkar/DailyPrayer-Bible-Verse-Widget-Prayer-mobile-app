@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Share, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, Pressable, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -8,8 +8,9 @@ import * as Haptics from 'expo-haptics';
 
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
+import { useFavoriteToggle } from '@/hooks/use-favorite-toggle';
 import { useAudioPlayer } from '@/hooks/use-audio-player';
-import { getDb, generateId, nowIso } from '@/db/client';
+import { getDb } from '@/db/client';
 import VerseImageGenerator from '@/components/verse/VerseImageGenerator';
 
 interface VerseDetail {
@@ -30,7 +31,8 @@ export default function VerseDetailScreen() {
   const { t } = useTranslation();
   const systemScheme = useColorScheme();
   const { colorScheme } = useAppStore();
-  const { toggleFavorite, isFavorite, recordActivity } = useUserStore();
+  const { isFavorite, recordActivity } = useUserStore();
+  const toggleFavoriteGated = useFavoriteToggle();
   const { isPlayingSpeech, playVerseSpeech } = useAudioPlayer();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
 
@@ -81,16 +83,9 @@ export default function VerseDetailScreen() {
   async function handleFavorite() {
     if (!verse) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const db = getDb();
-    if (favorited) {
-      await db.runAsync('DELETE FROM favorites WHERE type = ? AND ref_id = ?', ['verse', verse.id]);
-    } else {
-      await db.runAsync(
-        'INSERT OR IGNORE INTO favorites (id, type, ref_id, created_at) VALUES (?, ?, ?, ?)',
-        [generateId(), 'verse', verse.id, nowIso()]
-      );
-    }
-    toggleFavorite('verse', verse.id);
+    // The store owns the favourites table write; doing it here as well
+    // duplicated the row logic and skipped the free-tier limit check.
+    await toggleFavoriteGated('verse', verse.id);
   }
 
   if (loading || !verse) {
@@ -129,7 +124,7 @@ export default function VerseDetailScreen() {
             {verse.translation}
           </Text>
           <Text style={{ fontFamily: 'Lora_400Regular_Italic', fontSize: 22, lineHeight: 34, color: '#292B28', marginBottom: 20 }}>
-            "{verse.text}"
+            &quot;{verse.text}&quot;
           </Text>
           <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: '#292B28' }}>
             {verse.reference}
@@ -174,7 +169,7 @@ export default function VerseDetailScreen() {
                   style={{ backgroundColor: cardBg, borderRadius: 16, padding: 16, shadowColor: '#292B28', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 }}
                 >
                   <Text style={{ fontFamily: 'Lora_400Regular_Italic', fontSize: 15, lineHeight: 22, color: textPrimary, marginBottom: 8 }} numberOfLines={2}>
-                    "{rv.text}"
+                    &quot;{rv.text}&quot;
                   </Text>
                   <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: textSecondary }}>{rv.reference}</Text>
                 </Pressable>

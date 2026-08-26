@@ -100,10 +100,55 @@ export default function PrayScreen() {
           </View>
         </Animated.View>
 
+        {/* Guided / Personal switcher — both sections are rendered
+            conditionally on activeTab, but nothing ever set it, so the
+            Personal list was unreachable. */}
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(100)}
+          style={{ paddingHorizontal: 20, marginBottom: 16 }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              backgroundColor: surfaceBg,
+              borderRadius: 16,
+              padding: 4,
+              gap: 4,
+            }}
+          >
+            {(["guided", "personal"] as const).map((tab) => (
+              <Pressable
+                key={tab}
+                onPress={() => setActiveTab(tab)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: activeTab === tab }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 12,
+                  alignItems: "center",
+                  backgroundColor: activeTab === tab ? cardBg : "transparent",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily:
+                      activeTab === tab ? "Inter_700Bold" : "Inter_500Medium",
+                    fontSize: 14,
+                    color: activeTab === tab ? textPrimary : textSecondary,
+                  }}
+                >
+                  {tab === "guided" ? "Guided" : "My Prayers"}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
+
         {/* Community Prayer Wall Banner */}
         <Animated.View entering={FadeInDown.duration(400).delay(150)} style={{ paddingHorizontal: 20, marginBottom: 16 }}>
           <Pressable
-            onPress={() => router.push('/prayer/community')}
+            onPress={() => router.push('/(tabs)/community')}
             style={{
               backgroundColor: '#F2B84B',
               borderRadius: 20,
@@ -120,10 +165,10 @@ export default function PrayScreen() {
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: '#292B28', marginBottom: 4 }}>
-                🤝 Community Prayer Wall
+                🤝 Prayer Wall
               </Text>
               <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: '#4A4843', lineHeight: 18 }}>
-                Share prayer requests & pray for believers around the world.
+                Keep a running wall of prayer requests, saved on this device.
               </Text>
             </View>
             <View style={{ backgroundColor: '#292B28', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14 }}>

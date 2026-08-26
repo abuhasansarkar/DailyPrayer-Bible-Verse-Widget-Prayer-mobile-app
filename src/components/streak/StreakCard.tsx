@@ -1,6 +1,5 @@
 import { View, Text, Pressable, useColorScheme } from 'react-native';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { router } from 'expo-router';
+
 import { useAppStore } from '@/store/app.store';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import type { StreakData, StreakMilestone } from '@/types/user';

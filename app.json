@@ -13,9 +13,10 @@
       "bundleIdentifier": "com.dailyprayer.app",
       "supportsTablet": false,
       "infoPlist": {
-        "NSCameraUsageDescription": "Used to capture a photo for your widget background.",
-        "NSPhotoLibraryUsageDescription": "Used to select a photo for your widget background.",
-        "NSUserNotificationsUsageDescription": "Used to send you daily Bible verse and prayer reminders."
+        "NSUserNotificationsUsageDescription": "Used to send you daily Bible verse and prayer reminders.",
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -31,7 +32,6 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.SCHEDULE_EXACT_ALARM",
         "android.permission.POST_NOTIFICATIONS",
-        "android.permission.CAMERA",
         "android.permission.WAKE_LOCK"
       ]
     },
@@ -58,22 +58,11 @@
       ],
       "expo-font",
       "expo-secure-store",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Used to select a photo for your widget background.",
-          "cameraPermission": "Used to capture a photo for your widget background."
-        }
-      ]
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "extra": {
-      "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
-      }
     }
   }
 }

@@ -2,19 +2,48 @@ import Purchases, { LOG_LEVEL, CustomerInfo, PurchasesPackage } from 'react-nati
 import { Platform } from 'react-native';
 import { useSubscriptionStore } from '@/store/subscription.store';
 
-const API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS ?? '';
-const API_KEY_ANDROID = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID ?? '';
+import { ENV } from '@/constants/env';
+
+const API_KEY_IOS = ENV.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS;
+const API_KEY_ANDROID = ENV.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID;
 
 export const OFFERING_ID = 'default';
 export const PREMIUM_ENTITLEMENT = 'premium';
 
-export async function initRevenueCat(): Promise<void> {
-  const apiKey = Platform.select({ ios: API_KEY_IOS, android: API_KEY_ANDROID });
-  const isDemoKey = !apiKey || apiKey.includes('YOUR_KEY') || apiKey.includes('demo');
+function getApiKey(): string {
+  return Platform.select({ ios: API_KEY_IOS, android: API_KEY_ANDROID }) ?? '';
+}
 
-  if (isDemoKey) {
-    console.log('[RevenueCat] Running with Demo Test Key. Initializing preview packages mode.');
+/**
+ * True when there is no usable RevenueCat key.
+ *
+ * Demo mode fakes entitlements locally so the paywall can be developed without
+ * store credentials. It is gated on __DEV__ as well as the key: in a release
+ * build a missing or misconfigured key must NOT hand out free premium, so
+ * production falls through to the real SDK and purchases simply fail loudly.
+ */
+function isDemoMode(): boolean {
+  const apiKey = getApiKey();
+  const keyLooksFake = !apiKey || apiKey.includes('YOUR_KEY') || apiKey.includes('demo');
+  return __DEV__ && keyLooksFake;
+}
+
+export async function initRevenueCat(): Promise<void> {
+  const apiKey = getApiKey();
+
+  if (isDemoMode()) {
+    console.log('[RevenueCat] Dev build without a real key — using preview packages.');
     loadDemoPackages();
+    return;
+  }
+
+  if (!apiKey) {
+    // Release build with no key: surface it rather than silently unlocking.
+    console.error(
+      '[RevenueCat] No API key configured for this platform. Purchases are disabled.'
+    );
+    useSubscriptionStore.getState().setError('Subscriptions are temporarily unavailable.');
+    useSubscriptionStore.getState().setLoading(false);
     return;
   }
 
@@ -30,8 +59,13 @@ export async function initRevenueCat(): Promise<void> {
     handleCustomerInfo(info);
     await loadPackages();
   } catch (e) {
-    console.warn('[RevenueCat] Remote connection failed, switching to demo mode:', e);
-    loadDemoPackages();
+    console.warn('[RevenueCat] Configuration failed:', e);
+    if (isDemoMode()) {
+      loadDemoPackages();
+    } else {
+      useSubscriptionStore.getState().setError('Could not reach the store. Please try again later.');
+      useSubscriptionStore.getState().setLoading(false);
+    }
   }
 }
 
@@ -73,9 +107,15 @@ async function loadPackages(): Promise<void> {
       return;
     }
   } catch (e) {
-    console.warn('[RevenueCat] Could not load live packages, loading demo packages:', e);
+    console.warn('[RevenueCat] Could not load live packages:', e);
   }
-  loadDemoPackages();
+
+  if (isDemoMode()) {
+    loadDemoPackages();
+  } else {
+    setPackages([]);
+    setLoading(false);
+  }
 }
 
 function loadDemoPackages(): void {
@@ -112,13 +152,11 @@ function mapPeriod(packageType: string): 'monthly' | 'annual' | 'lifetime' {
 }
 
 export async function purchasePackage(pkg: { identifier: string }): Promise<boolean> {
-  const apiKey = Platform.select({ ios: API_KEY_IOS, android: API_KEY_ANDROID }) ?? '';
-  const isDemoKey = !apiKey || apiKey.includes('YOUR_KEY') || apiKey.includes('demo');
-
-  if (isDemoKey) {
+  // Dev-only shortcut so the paywall and unlocked states can be exercised
+  // without store credentials. Never reachable in a release build.
+  if (isDemoMode()) {
     const { setTier } = useSubscriptionStore.getState();
-    const period = pkg.identifier.includes('lifetime') ? 'lifetime' : 'premium';
-    setTier(period as any);
+    setTier(pkg.identifier.includes('lifetime') ? 'lifetime' : 'premium');
     return true;
   }
 
@@ -143,10 +181,7 @@ export async function purchasePackage(pkg: { identifier: string }): Promise<bool
 }
 
 export async function restorePurchases(): Promise<boolean> {
-  const apiKey = Platform.select({ ios: API_KEY_IOS, android: API_KEY_ANDROID }) ?? '';
-  const isDemoKey = !apiKey || apiKey.includes('YOUR_KEY') || apiKey.includes('demo');
-
-  if (isDemoKey) {
+  if (isDemoMode()) {
     console.log('[RevenueCat] Restore called in demo mode');
     return false;
   }

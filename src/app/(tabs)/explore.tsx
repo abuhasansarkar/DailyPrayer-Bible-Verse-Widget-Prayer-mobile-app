@@ -1,7 +1,7 @@
 import { BIBLE_BOOKS } from "@/constants/bibleBooks";
 import { useAppStore } from "@/store/app.store";
 import { router } from "expo-router";
-import { useState } from "react";
+
 import { useTranslation } from "react-i18next";
 import {
   Pressable,
@@ -44,18 +44,10 @@ export default function ExploreScreen() {
   const { colorScheme } = useAppStore();
   const isDark =
     (colorScheme === "system" ? systemScheme : colorScheme) === "dark";
-  const [searchText, setSearchText] = useState("");
-
   const bg = isDark ? "#1E1C18" : "#FFF9EE";
-  const surfaceBg = isDark ? "#2A2720" : "#F1E6D3";
   const cardBg = isDark ? "#332F26" : "#FFFFFF";
   const textPrimary = isDark ? "#F5EDD8" : "#292B28";
   const textSecondary = isDark ? "#B8AD97" : "#77766F";
-
-  const handleSearch = () => {
-    if (!searchText.trim()) return;
-    router.push(`/search?q=${encodeURIComponent(searchText.trim())}`);
-  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
@@ -251,7 +243,7 @@ export default function ExploreScreen() {
                         color: textSecondary,
                       }}
                     >
-                      {book.chapterCount} ch
+                      {book.chapters} ch
                     </Text>
                   )}
                 </Pressable>

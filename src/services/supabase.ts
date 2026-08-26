@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+import { ENV, IS_SUPABASE_CONFIGURED } from '@/constants/env';
+
+const SUPABASE_URL = ENV.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = ENV.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // SecureStore adapter for Supabase session persistence
 const ExpoSecureStoreAdapter = {
@@ -24,7 +26,7 @@ export const supabase = createClient(
   }
 );
 
-const isConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('placeholder'));
+const isConfigured = IS_SUPABASE_CONFIGURED;
 
 // ── Auth helpers ───────────────────────────────────────────────────────────────
 
@@ -100,7 +102,7 @@ export async function syncPreferences(prefs: {
  * Sync a batch of favorites to Supabase
  */
 export async function syncFavorites(
-  favorites: Array<{ type: string; ref_id: string; created_at?: string }>
+  favorites: { type: string; ref_id: string; created_at?: string }[]
 ): Promise<void> {
   if (!isConfigured) return;
   try {
@@ -129,10 +131,10 @@ export async function syncFavorites(
  * Sync journal entries (last-write-wins by updated_at)
  */
 export async function syncJournalEntries(
-  entries: Array<{
+  entries: {
     id: string; type: string; title: string; body: string;
     mood?: string; is_answered: number; created_at: string; updated_at: string;
-  }>
+  }[]
 ): Promise<void> {
   if (!isConfigured) return;
   try {
@@ -162,7 +164,7 @@ export async function syncJournalEntries(
  * Sync streak log to Supabase
  */
 export async function syncStreakLog(
-  log: Array<{ date: string; activities: string[]; is_complete: boolean }>
+  log: { date: string; activities: string[]; is_complete: boolean }[]
 ): Promise<void> {
   if (!isConfigured) return;
   try {

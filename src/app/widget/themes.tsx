@@ -16,7 +16,6 @@ export default function WidgetThemesScreen() {
   const [filter, setFilter] = useState<'ALL' | 'FREE' | 'PREMIUM'>('ALL');
 
   const bg = isDark ? '#1E1C18' : '#FFF9EE';
-  const cardBg = isDark ? '#332F26' : '#FFFFFF';
   const surfaceBg = isDark ? '#2A2720' : '#F1E6D3';
   const textPrimary = isDark ? '#F5EDD8' : '#292B28';
   const textSecondary = isDark ? '#B8AD97' : '#77766F';
@@ -89,7 +88,7 @@ export default function WidgetThemesScreen() {
                 }}
               >
                 <Text style={{ fontFamily: 'Lora_400Regular_Italic', fontSize: 11, lineHeight: 16, color: theme.textColor }} numberOfLines={3}>
-                  "For I know the plans I have for you..."
+                  &quot;For I know the plans I have for you...&quot;
                 </Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 11, color: theme.referenceColor }}>

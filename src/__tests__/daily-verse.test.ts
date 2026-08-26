@@ -1,4 +1,4 @@
-import { getDailyVerse, CURATED_DAILY_VERSES } from '../services/daily-verse-rotation';
+import { getDailyVerse } from '../services/daily-verse-rotation';
 
 describe('Daily Verse Auto-Rotation Service', () => {
   it('should return a valid verse for a specific date', async () => {

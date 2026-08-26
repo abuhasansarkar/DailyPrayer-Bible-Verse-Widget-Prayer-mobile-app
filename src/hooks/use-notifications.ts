@@ -1,14 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Platform } from 'react-native';
 import {
   requestNotificationPermission,
   scheduleReminder,
   cancelReminder,
-  cancelAllReminders,
   syncRemindersFromDb,
 } from '@/services/notifications';
-import { getDb, generateId, nowIso } from '@/db/client';
-import { parseJson } from '@/db/client';
+import { getDb, generateId, nowIso, parseJson } from '@/db/client';
 import type { PrayerReminder } from '@/types/prayer';
 
 export function useNotifications() {
@@ -36,7 +33,7 @@ export function useNotifications() {
         id: r.id,
         title: r.title,
         time: r.time,
-        daysOfWeek: parseJson<number[]>(r.days_of_week, [1, 2, 3, 4, 5, 6, 7]),
+        daysOfWeek: parseJson<number[]>(r.days_of_week, [0, 1, 2, 3, 4, 5, 6]),
         type: r.type as PrayerReminder['type'],
         isActive: r.is_active === 1,
         soundEnabled: r.sound_enabled === 1,

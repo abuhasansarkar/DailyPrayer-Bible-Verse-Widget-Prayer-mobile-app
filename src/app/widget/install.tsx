@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
 
 export default function WidgetInstallGuideScreen() {
-  const { t } = useTranslation();
   const systemScheme = useColorScheme();
   const { colorScheme } = useAppStore();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';

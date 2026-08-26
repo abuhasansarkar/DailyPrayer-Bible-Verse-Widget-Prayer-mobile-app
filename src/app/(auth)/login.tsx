@@ -106,7 +106,7 @@ export default function LoginScreen() {
 
       {/* Footer Link */}
       <View className="flex-row justify-center mt-8">
-        <Text className="text-[#77766F]">Don't have an account? </Text>
+        <Text className="text-[#77766F]">Don&apos;t have an account? </Text>
         <TouchableOpacity onPress={() => router.replace('/(auth)/signup')}>
           <Text className="text-[#D98262] font-bold">Create One</Text>
         </TouchableOpacity>

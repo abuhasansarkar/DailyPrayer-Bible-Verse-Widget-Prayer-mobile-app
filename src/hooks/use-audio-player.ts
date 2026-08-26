@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 import { speakText, stopSpeaking, toggleSoundscape, stopSoundscape, SoundscapeId } from '@/services/audio';
 

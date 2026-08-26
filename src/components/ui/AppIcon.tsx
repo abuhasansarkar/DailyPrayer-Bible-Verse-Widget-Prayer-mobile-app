@@ -24,6 +24,7 @@ export type AppIconName =
   | 'palette'
   | 'phone'
   | 'grid'
+  | 'heart'
   | 'check';
 
 interface AppIconProps {
@@ -101,6 +102,7 @@ export function AppIcon({ name, size = 24, color = '#292B28', strokeWidth = 2 }:
       {name === 'sparkle' && <><Path {...common} d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" /><Path {...common} d="M5 16l.8 2.2L8 19l-2.2.8L5 22l-.8-2.2L2 19l2.2-.8L5 16Z" /></>}
       {name === 'help' && <><Circle {...common} cx="12" cy="12" r="9" /><Path {...common} d="M9.8 9a2.4 2.4 0 1 1 4.1 1.7c-1.1 1-1.9 1.5-1.9 3" /><Line {...common} x1="12" y1="17" x2="12" y2="17.1" /></>}
       {name === 'info' && <><Circle {...common} cx="12" cy="12" r="9" /><Line {...common} x1="12" y1="10" x2="12" y2="16" /><Line {...common} x1="12" y1="7" x2="12" y2="7.1" /></>}
+      {name === 'heart' && <Path {...common} d="M12 20.3 4.7 13a4.6 4.6 0 0 1 6.5-6.5l.8.8.8-.8A4.6 4.6 0 0 1 19.3 13L12 20.3Z" />}
       {name === 'chevronRight' && <Polyline {...common} points="9 6 15 12 9 18" />}
       {name === 'arrowLeft' && <><Line {...common} x1="19" y1="12" x2="5" y2="12" /><Polyline {...common} points="12 5 5 12 12 19" /></>}
       {name === 'plus' && <><Line {...common} x1="12" y1="5" x2="12" y2="19" /><Line {...common} x1="5" y1="12" x2="19" y2="12" /></>}

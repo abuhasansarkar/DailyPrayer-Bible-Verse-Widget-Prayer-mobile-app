@@ -11,13 +11,13 @@ export interface DailyVerseItem {
   date?: string;
 }
 
-export const CURATED_DAILY_VERSES: Array<{
+export const CURATED_DAILY_VERSES: {
   book: string;
   chapter: number;
   verse: number;
   text: string;
   topic: string;
-}> = [
+}[] = [
   { book: 'John', chapter: 3, verse: 16, text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.', topic: 'Love' },
   { book: 'Philippians', chapter: 4, verse: 13, text: 'I can do all things through Christ which strengtheneth me.', topic: 'Strength' },
   { book: 'Jeremiah', chapter: 29, verse: 11, text: 'For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end.', topic: 'Hope' },
@@ -65,7 +65,9 @@ export async function getDailyVerse(dateStr?: string): Promise<DailyVerseItem> {
     if (apiVerse && apiVerse.text) {
       return {
         id: `${targetDate}-${normalizeBookSlug(selected.book)}-${selected.chapter}-${selected.verse}`,
-        book: apiVerse.book_name || selected.book,
+        // The CDN verse endpoint returns only { verse, text } — the book name
+        // comes from the curated entry we looked the verse up by.
+        book: selected.book,
         chapter: selected.chapter,
         verse: selected.verse,
         text: apiVerse.text.replace(/^¶\s*/, '').trim(),
@@ -74,7 +76,7 @@ export async function getDailyVerse(dateStr?: string): Promise<DailyVerseItem> {
         date: targetDate,
       };
     }
-  } catch (_e) {
+  } catch {
     // Offline fallback
   }
 

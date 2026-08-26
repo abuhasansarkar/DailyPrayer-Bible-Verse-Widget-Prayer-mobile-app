@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity } from 'react-native';
-import Slider from '@react-native-community/slider';
-import { Volume2, VolumeX, Play, Square, X, Music, Sparkles } from '@/components/ui/LucideIcons';
+import { Play, Square, X, Music, Sparkles } from '@/components/ui/LucideIcons';
 import { speakText, stopSpeaking, toggleSoundscape, stopSoundscape, SOUNDSCAPES, SoundscapeId } from '@/services/audio';
 
 interface AudioPlayerModalProps {
@@ -70,7 +69,7 @@ export function AudioPlayerModal({ visible, onClose, verseText, verseReference }
             <View className="bg-[#F5EDD8] dark:bg-[#2A2720] rounded-2xl p-4 mb-6 border border-[#E8DFC9] dark:border-[#332E25]">
               <Text className="text-xs font-bold text-[#D98262] uppercase mb-1">Text To Speech</Text>
               <Text className="text-sm font-semibold text-[#292B28] dark:text-[#F5EDD8] mb-3" numberOfLines={2}>
-                {verseReference}: "{verseText}"
+                {verseReference}: &quot;{verseText}&quot;
               </Text>
               <TouchableOpacity
                 onPress={handleToggleSpeak}
@@ -100,7 +99,7 @@ export function AudioPlayerModal({ visible, onClose, verseText, verseReference }
             Ambient Meditation Soundscapes
           </Text>
           <View className="gap-2 mb-6">
-            {(Object.keys(SOUNDSCAPES) as Array<NonNullable<SoundscapeId>>).map(key => {
+            {(Object.keys(SOUNDSCAPES) as NonNullable<SoundscapeId>[]).map(key => {
               const item = SOUNDSCAPES[key];
               const isSelected = activeSoundscape === key;
               return (

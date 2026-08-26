@@ -1,14 +1,4 @@
-import {
-  BookOpen,
-  CheckCircle,
-  ChevronRight,
-  Copy,
-  Heart,
-  RefreshCw,
-  Send,
-  Sparkles,
-  X,
-} from "@/components/ui/LucideIcons";
+import { BookOpen, CheckCircle, ChevronRight, Copy, Heart, Send, Sparkles, X } from "@/components/ui/LucideIcons";
 import {
   askOpenCodeZen,
   getOpenCodeZenModel,
@@ -18,24 +8,13 @@ import {
 } from "@/services/opencode-zen";
 import * as Haptics from "expo-haptics";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  useColorScheme,
-  View,
-} from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { useResolvedTheme } from "@/hooks/use-theme";
 
 let ClipboardModule: any = null;
 try {
   ClipboardModule = require("expo-clipboard");
-} catch (e) {
+} catch {
   ClipboardModule = null;
 }
 
@@ -94,7 +73,7 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
 
   // Chat state
   const [chatMessages, setChatMessages] = useState<
-    Array<{ role: "user" | "assistant"; text: string }>
+    { role: "user" | "assistant"; text: string }[]
   >([
     {
       role: "assistant",
@@ -107,12 +86,17 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
     getOpenCodeZenModel().then(setSelectedModel).catch(console.warn);
   }, []);
 
-  useEffect(() => {
+  // Adjust state during render rather than in an effect: this is the supported
+  // "reset state when a prop changes" pattern, and it avoids the extra render
+  // pass a synchronous setState inside useEffect would cause.
+  const [appliedTopic, setAppliedTopic] = useState(initialTopic);
+  if (initialTopic !== appliedTopic) {
+    setAppliedTopic(initialTopic);
     if (initialTopic) {
       setCustomPrompt(initialTopic);
       setActiveTab("prayer");
     }
-  }, [initialTopic]);
+  }
 
   const handleModelChange = async (modelId: OpenCodeZenModelId) => {
     try {
@@ -189,7 +173,7 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
         model: selectedModel,
       });
       setChatMessages((prev) => [...prev, { role: "assistant", text: res }]);
-    } catch (err) {
+    } catch {
       setChatMessages((prev) => [
         ...prev,
         {

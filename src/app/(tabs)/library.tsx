@@ -1,9 +1,11 @@
 import { getDb } from "@/db/client";
 import { useAppStore } from "@/store/app.store";
+import { canAddMore, GATE_MESSAGES } from "@/constants/entitlements";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -12,6 +14,17 @@ import {
 } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+/** Row shape returned by the favourites query (verses joined for display). */
+interface FavoriteRow {
+  id: string;
+  type: string;
+  ref_id: string;
+  note: string | null;
+  created_at: string;
+  verse_text: string | null;
+  verse_reference: string | null;
+}
 
 interface CollectionRow {
   id: string;
@@ -78,6 +91,13 @@ export default function LibraryScreen() {
   }, [activeTab]);
 
   const handleCreateCollection = async () => {
+    if (!canAddMore('collections', collections.length)) {
+      Alert.alert('Collection limit reached', GATE_MESSAGES.collections, [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'See Premium', onPress: () => router.push('/premium') },
+      ]);
+      return;
+    }
     const colName = `Collection #${collections.length + 1}`;
     try {
       const db = getDb();
@@ -123,7 +143,7 @@ export default function LibraryScreen() {
             >
               {t("library.title")}
             </Text>
-            <Pressable onPress={() => router.push("/settings/screen")}>
+            <Pressable onPress={() => router.push("/settings")}>
               <View
                 style={{
                   width: 40,
@@ -240,8 +260,8 @@ export default function LibraryScreen() {
                           marginBottom: 10,
                         }}
                       >
-                        "{fav.verse_text.slice(0, 150)}
-                        {fav.verse_text.length > 150 ? "..." : ""}"
+                        &quot;{fav.verse_text.slice(0, 150)}
+                        {fav.verse_text.length > 150 ? "..." : ""}&quot;
                       </Text>
                       <Text
                         style={{
@@ -350,7 +370,7 @@ export default function LibraryScreen() {
                     textAlign: "center",
                   }}
                 >
-                  Verses and prayers you've read will appear here.
+                  Verses and prayers you&apos;ve read will appear here.
                 </Text>
               </View>
             ) : (

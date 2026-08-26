@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -9,6 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 export type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
@@ -133,9 +134,6 @@ export function Toast({
     </Animated.View>
   );
 }
-
-// Hook for easy use
-import { useState, useCallback } from 'react';
 
 export function useToast() {
   const [state, setState] = useState<{

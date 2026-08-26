@@ -91,25 +91,24 @@ async function requestJson<T>(
 }
 
 /**
- * Normalize Bible translation version string to a valid jsDelivr repository CDN version ID.
- * Maps 'NIV', 'ESV', 'KJV', 'NKJV', etc. to supported public domain versions (e.g. 'en-kjv', 'en-asv').
+ * Normalize a translation id to a jsDelivr CDN version id.
+ *
+ * Only public-domain editions are mapped. Copyrighted translations are
+ * deliberately absent: aliasing e.g. NIV to en-kjv would serve KJV text
+ * under an NIV label, which is both wrong and a licensing problem.
+ * Anything unrecognised falls back to KJV.
  */
 export function normalizeVersion(version?: string): string {
   if (!version) return "en-kjv";
   const trimmed = version.trim();
   if (trimmed.includes("-")) return trimmed.toLowerCase();
-  const upper = trimmed.toUpperCase();
   const versionMap: Record<string, string> = {
     KJV: "en-kjv",
     AKJV: "en-akjv",
     ASV: "en-asv",
     WEB: "en-web",
-    NIV: "en-kjv",
-    ESV: "en-asv",
-    NLT: "en-web",
-    NKJV: "en-kjv",
   };
-  return versionMap[upper] ?? "en-kjv";
+  return versionMap[trimmed.toUpperCase()] ?? "en-kjv";
 }
 
 /**
@@ -247,11 +246,21 @@ export async function getBibleVersions(): Promise<BibleVersion[]> {
 }
 
 /**
- * Optional helper for removing KJV paragraph markers.
+ * Clean raw CDN verse text for display.
  *
- * Keep the original API text in your database and clean it only for display.
+ * Strips two artefacts the source embeds:
+ *  - leading pilcrow paragraph markers (`¶`)
+ *  - translator marginal notes, appended with no separator as
+ *    `<chapter>.<verse> <note>` — e.g. "…an expected end.29.11 expected…: Heb."
+ *    A note marker is always glued directly to the preceding character, so a
+ *    number preceded by whitespace (normal prose) is left alone.
  */
 export function formatBibleText(text: string): string {
-  return text.replace(/^¶\s*/, "").trim();
+  let out = text.replace(/^¶\s*/, "").replace(/\s+/g, " ").trim();
+  const note = out.match(/\S\d+\.\d+\s/);
+  if (note && note.index !== undefined) {
+    out = out.slice(0, note.index + 1);
+  }
+  return out.trim();
 }
 

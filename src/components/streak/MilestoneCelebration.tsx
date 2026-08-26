@@ -100,7 +100,7 @@ export function MilestoneCelebration({ milestone, onDismiss }: MilestoneCelebrat
             fontFamily: 'Lora_400Regular_Italic', fontSize: 16, lineHeight: 25,
             color: textSecondary, textAlign: 'center', marginBottom: 32,
           }}>
-            "{milestone.message}"
+            &quot;{milestone.message}&quot;
           </Text>
 
           {/* CTA */}

@@ -89,7 +89,7 @@ export default function WidgetCustomizeScreen() {
               }}
               numberOfLines={widgetSize === 'small' ? 3 : widgetSize === 'large' ? 6 : 3}
             >
-              "{contentType === 'daily-prayer' ? 'Lord, give me strength today to walk in your peace and grace.' : 'For I know the plans I have for you, declares the Lord...'}"
+              &quot;{contentType === 'daily-prayer' ? 'Lord, give me strength today to walk in your peace and grace.' : 'For I know the plans I have for you, declares the Lord...'}&quot;
             </Text>
 
             {showReference && (
@@ -179,7 +179,7 @@ export default function WidgetCustomizeScreen() {
             <Switch value={showReference} onValueChange={setShowReference} trackColor={{ false: '#CFCFCA', true: '#F2B84B' }} thumbColor="#FFFFFF" />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 }}>
-            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: textPrimary }}>Show Today's Date</Text>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: textPrimary }}>Show Today&apos;s Date</Text>
             <Switch value={showDate} onValueChange={setShowDate} trackColor={{ false: '#CFCFCA', true: '#F2B84B' }} thumbColor="#FFFFFF" />
           </View>
         </View>

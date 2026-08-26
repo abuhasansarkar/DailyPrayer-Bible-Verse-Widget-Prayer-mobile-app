@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useAppStore } from '@/store/app.store';
+
 import { getDb } from '@/db/client';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useResolvedTheme } from '@/hooks/use-theme';
@@ -99,7 +99,7 @@ export default function TopicDetailScreen() {
               style={{ backgroundColor: cardBg, borderRadius: 20, padding: 18, shadowColor: '#292B28', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}
             >
               <Text style={{ fontFamily: 'Lora_400Regular_Italic', fontSize: 16, lineHeight: 26, color: textPrimary, marginBottom: 10 }} numberOfLines={3}>
-                "{verse.text}"
+                &quot;{verse.text}&quot;
               </Text>
               <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: textSecondary }}>{verse.reference}</Text>
             </Pressable>

@@ -41,6 +41,20 @@ export default function BibleIndexScreen() {
           <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 24, color: textPrimary, letterSpacing: -0.5, flex: 1 }}>
             Bible
           </Text>
+          {/* Compare Translations existed as a route but nothing linked to it. */}
+          <Pressable
+            onPress={() => router.push('/bible/compare')}
+            accessibilityRole="button"
+            accessibilityLabel="Compare translations"
+            style={{
+              height: 40, paddingHorizontal: 14, borderRadius: 20,
+              backgroundColor: surfaceBg, alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: textPrimary }}>
+              Compare
+            </Text>
+          </Pressable>
         </View>
 
         {/* Search */}

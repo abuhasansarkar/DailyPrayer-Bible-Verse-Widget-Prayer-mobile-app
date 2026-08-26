@@ -8,6 +8,8 @@ import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
 import { useSubscriptionStore } from '@/store/subscription.store';
 import { AppIcon, AppIconName } from '@/components/ui/AppIcon';
+import { BIBLE_TRANSLATIONS } from '@/types/verse';
+import { ExportImportService } from '@/services/export-import';
 import {
   getOpenCodeZenApiKey,
   getOpenCodeZenModel,
@@ -67,9 +69,8 @@ export default function SettingsScreen() {
   };
 
   const handleCycleTranslation = async () => {
-    const translations = ['NIV', 'ESV', 'KJV', 'NLT', 'CSB'] as const;
-    const currentIdx = translations.indexOf(preferences.preferredTranslation as any);
-    const nextTranslation = translations[(currentIdx + 1) % translations.length]!;
+    const currentIdx = BIBLE_TRANSLATIONS.findIndex((tr) => tr.id === preferences.preferredTranslation);
+    const nextTranslation = BIBLE_TRANSLATIONS[(currentIdx + 1) % BIBLE_TRANSLATIONS.length]!.id;
     setTranslation(nextTranslation);
     try {
       const { getDb } = await import('@/db/client');
@@ -142,6 +143,36 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleExportData = async () => {
+    const ok = await ExportImportService.exportUserData();
+    if (!ok) {
+      Alert.alert('Export failed', 'Unable to create the backup file. Please try again.');
+    }
+  };
+
+  const handleImportData = async () => {
+    Alert.alert(
+      'Import backup',
+      'This merges a backup file into your current data. Entries with the same id are overwritten.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Choose file',
+          onPress: async () => {
+            const result = await ExportImportService.pickAndImportFile();
+            if (result.canceled) return;
+            if (result.success) {
+              await useUserStore.getState().loadUserDataFromDb();
+              Alert.alert('Import complete', `Restored ${result.importedCount} entries.`);
+            } else {
+              Alert.alert('Import failed', 'That file could not be read as a DailyPrayer backup.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleCycleZenModel = async () => {
     const currentIdx = OPENCODE_ZEN_FREE_MODELS.findIndex((model) => model.id === zenModel);
     const next = OPENCODE_ZEN_FREE_MODELS[(currentIdx + 1) % OPENCODE_ZEN_FREE_MODELS.length]!;
@@ -185,8 +216,16 @@ export default function SettingsScreen() {
       ],
     },
     {
+      title: 'Data & Backup',
+      rows: [
+        { label: 'Export backup', icon: 'shield', value: 'JSON', onPress: handleExportData, accent: '#96AA88' },
+        { label: 'Import backup', icon: 'grid', value: 'Restore', onPress: handleImportData, accent: '#7BB8D4' },
+      ],
+    },
+    {
       title: 'Account',
       rows: [
+        { label: 'Sign in', icon: 'phone', value: 'Sync & restore', onPress: () => router.push('/(auth)/login'), accent: '#B8A8CC' },
         { label: t('settings.subscription'), icon: 'sparkle', value: tier === 'free' ? 'Free' : 'Premium', onPress: () => router.push('/premium'), accent: '#F2B84B' },
         { label: t('settings.privacy'), icon: 'shield', onPress: () => Linking.openURL('https://dailyprayer.app/privacy').catch(() => {}), accent: '#96AA88' },
         { label: t('settings.help'), icon: 'help', onPress: () => Linking.openURL('mailto:support@dailyprayer.app?subject=DailyPrayer%20Support').catch(() => {}), accent: '#7BB8D4' },
@@ -212,7 +251,7 @@ export default function SettingsScreen() {
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 18, color: '#292B28' }}>{displayName || 'My DailyPrayer'}</Text>
             <Text style={{ fontFamily: 'Inter_500Medium', fontSize: 13, color: 'rgba(41,43,40,0.72)', marginTop: 3 }}>
-              {streak.currentStreak} day streak • {tier === 'premium' ? 'Premium' : 'Free'}
+              {streak.currentStreak} day streak â€¢ {tier === 'premium' ? 'Premium' : 'Free'}
             </Text>
           </View>
           <Pressable onPress={handleEditProfile} style={{ backgroundColor: 'rgba(41,43,40,0.12)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 }}>

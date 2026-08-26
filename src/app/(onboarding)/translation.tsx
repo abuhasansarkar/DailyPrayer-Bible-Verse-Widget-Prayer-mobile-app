@@ -5,19 +5,29 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/app.store';
 import { BibleTranslation } from '@/types/verse';
 
+// Public-domain editions only — see BibleTranslation in @/types/verse.
 const TRANSLATIONS: { id: BibleTranslation; name: string; fullName: string; description: string }[] = [
-  { id: 'NIV', name: 'NIV', fullName: 'New International Version', description: 'Clear modern English. Most widely read.' },
-  { id: 'ESV', name: 'ESV', fullName: 'English Standard Version', description: 'Accurate and literal. Excellent for study.' },
-  { id: 'NLT', name: 'NLT', fullName: 'New Living Translation', description: 'Thought-for-thought. Warm and accessible.' },
   { id: 'KJV', name: 'KJV', fullName: 'King James Version', description: 'Historic and poetic. Timeless language.' },
-  { id: 'NKJV', name: 'NKJV', fullName: 'New King James Version', description: 'Classic style with modern updates.' },
-  { id: 'CSB', name: 'CSB', fullName: 'Christian Standard Bible', description: 'Balances accuracy and readability.' },
-  { id: 'MSG', name: 'MSG', fullName: 'The Message', description: 'Contemporary paraphrase. Great for devotionals.' },
+  { id: 'WEB', name: 'WEB', fullName: 'World English Bible', description: 'Modern English update of the ASV. Easy to read.' },
+  { id: 'ASV', name: 'ASV', fullName: 'American Standard Version', description: 'Accurate and literal. Excellent for study.' },
 ];
 
 export default function TranslationScreen() {
   const { t } = useTranslation();
   const { preferences, setTranslation } = useAppStore();
+
+  const handleSelect = async (id: BibleTranslation) => {
+    setTranslation(id);
+    try {
+      const { getDb } = await import('@/db/client');
+      await getDb().runAsync(
+        'UPDATE user_preferences SET preferred_translation = ? WHERE id = 1',
+        [id]
+      );
+    } catch (e) {
+      console.warn('[Onboarding] Error saving translation pref:', e);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-cream dark:bg-bg-dark">
@@ -39,7 +49,7 @@ export default function TranslationScreen() {
             return (
               <Pressable
                 key={tr.id}
-                onPress={() => setTranslation(tr.id)}
+                onPress={() => handleSelect(tr.id)}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',

@@ -1,8 +1,8 @@
-import { View, Text, ScrollView, Pressable, TextInput, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useAppStore } from '@/store/app.store';
+
 import { useJournal } from '@/hooks/use-journal';
 import { Toast, useToast } from '@/components/ui/Toast';
 import { useState } from 'react';
@@ -74,7 +74,7 @@ export default function GratitudeScreen() {
             </Text>
           </View>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: textSecondary, lineHeight: 22, paddingLeft: 4 }}>
-            "Give thanks in all circumstances." — 1 Thess 5:18
+            &quot;Give thanks in all circumstances.&quot; — 1 Thess 5:18
           </Text>
         </Animated.View>
 
@@ -86,7 +86,7 @@ export default function GratitudeScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ fontSize: 22 }}>✨</Text>
             <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: textPrimary }}>
-              Today I'm grateful for...
+              Today I&apos;m grateful for...
             </Text>
           </View>
 

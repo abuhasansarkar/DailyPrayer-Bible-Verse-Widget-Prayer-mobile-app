@@ -1,15 +1,13 @@
 import { useState, useCallback } from 'react';
-import {
-  View, Text, ScrollView, Pressable, TextInput, useColorScheme, ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { useAppStore } from '@/store/app.store';
+
 import { useBible } from '@/hooks/use-bible';
+import { useFavoriteToggle } from '@/hooks/use-favorite-toggle';
 import { useUserStore } from '@/store/user.store';
-import { useToast } from '@/components/ui/Toast';
-import { Toast } from '@/components/ui/Toast';
+import { useToast , Toast } from '@/components/ui/Toast';
 import { useResolvedTheme } from '@/hooks/use-theme';
 
 interface SearchResult {
@@ -24,7 +22,8 @@ export default function SearchScreen() {
   const { q: initialQuery } = useLocalSearchParams<{ q?: string }>();
   const { isDark } = useResolvedTheme();
   const { searchVerses } = useBible();
-  const { toggleFavorite, isFavorite } = useUserStore();
+  const { isFavorite } = useUserStore();
+  const toggleFavoriteGated = useFavoriteToggle();
   const { toastProps, show } = useToast();
 
   const [query, setQuery] = useState(initialQuery ?? '');
@@ -150,14 +149,15 @@ export default function SearchScreen() {
                           {result.reference}
                         </Text>
                         <Text style={{ fontFamily: 'Lora_400Regular_Italic', fontSize: 14, lineHeight: 22, color: textPrimary }}>
-                          "{highlight(result.text.slice(0, 180) + (result.text.length > 180 ? '…' : ''), query)}"
+                          &quot;{highlight(result.text.slice(0, 180) + (result.text.length > 180 ? '…' : ''), query)}&quot;
                         </Text>
                       </View>
                       <Pressable
                         onPress={async (e) => {
                           e.stopPropagation();
-                          await toggleFavorite('verse', result.id);
-                          show(saved ? 'Removed from favorites' : 'Saved!', saved ? 'info' : 'success');
+                          const added = await toggleFavoriteGated('verse', result.id);
+                          if (added === null) return; // blocked by the free-tier limit
+                          show(added ? 'Saved!' : 'Removed from favorites', added ? 'success' : 'info');
                         }}
                         style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: saved ? '#F2B84B22' : surfaceBg, alignItems: 'center', justifyContent: 'center' }}
                       >

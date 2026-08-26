@@ -10,6 +10,7 @@ import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
 import { useAudioPlayer } from '@/hooks/use-audio-player';
 import { getDb } from '@/db/client';
+import { isPremiumNow } from '@/constants/entitlements';
 import MascotCelebration from '@/components/mascot/MascotCelebration';
 
 interface PrayerDetail {
@@ -44,6 +45,7 @@ export default function PrayerDetailScreen() {
   const textSecondary = isDark ? '#B8AD97' : '#77766F';
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
       if (!id) return;
       const db = getDb();
@@ -51,9 +53,17 @@ export default function PrayerDetailScreen() {
         'SELECT * FROM guided_prayers WHERE id = ?',
         [id]
       );
+      if (cancelled) return;
+      // Enforce the paywall here too — this screen is reachable by deep link
+      // and notification tap, not just through the (already gated) card.
+      if (row?.is_premium === 1 && !isPremiumNow()) {
+        router.replace('/premium');
+        return;
+      }
       setPrayer(row ?? null);
     }
     load();
+    return () => { cancelled = true; };
   }, [id]);
 
   function handleMarkPrayed() {
@@ -133,7 +143,7 @@ export default function PrayerDetailScreen() {
               Scripture
             </Text>
             <Text style={{ fontFamily: 'Lora_400Regular_Italic', fontSize: 16, lineHeight: 26, color: textPrimary, marginBottom: 8 }}>
-              "{prayer.scripture_text}"
+              &quot;{prayer.scripture_text}&quot;
             </Text>
             <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, color: isDark ? '#E0A828' : '#BB7E1A' }}>
               {prayer.scripture_ref}

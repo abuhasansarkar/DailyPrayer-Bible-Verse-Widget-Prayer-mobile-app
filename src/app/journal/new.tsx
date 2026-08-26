@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Pressable, useColorScheme } from 'react-native';
+import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useAppStore } from '@/store/app.store';
+
 import { useUserStore } from '@/store/user.store';
 import { getDb, generateId, nowIso } from '@/db/client';
 import { useResolvedTheme } from '@/hooks/use-theme';

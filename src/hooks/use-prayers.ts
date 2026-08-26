@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { getDb } from '@/db/client';
+import { useAsyncData } from './use-async-data';
 
 export interface GuidedPrayer {
   id: string;
@@ -21,66 +22,85 @@ export interface PersonalPrayer {
   created_at: string;
 }
 
+interface PrayersData {
+  guided: GuidedPrayer[];
+  personal: PersonalPrayer[];
+}
+
+const EMPTY: PrayersData = { guided: [], personal: [] };
+
 export function usePrayers(category?: string) {
-  const [guided, setGuided] = useState<GuidedPrayer[]>([]);
-  const [personal, setPersonal] = useState<PersonalPrayer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const fetchPrayers = useCallback(async (): Promise<PrayersData> => {
+    const db = getDb();
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
-      const db = getDb();
+    const guidedQuery = category
+      ? 'SELECT id, title, category, duration_minutes, is_premium, intro, body, scripture_ref FROM guided_prayers WHERE category = ? ORDER BY title'
+      : 'SELECT id, title, category, duration_minutes, is_premium, intro, body, scripture_ref FROM guided_prayers ORDER BY category, title';
 
-      const guidedQuery = category
-        ? 'SELECT id, title, category, duration_minutes, is_premium, intro, body, scripture_ref FROM guided_prayers WHERE category = ? ORDER BY title'
-        : 'SELECT id, title, category, duration_minutes, is_premium, intro, body, scripture_ref FROM guided_prayers ORDER BY category, title';
+    const guided = category
+      ? await db.getAllAsync<GuidedPrayer>(guidedQuery, [category])
+      : await db.getAllAsync<GuidedPrayer>(guidedQuery);
 
-      const guidedRows = category
-        ? await db.getAllAsync<GuidedPrayer>(guidedQuery, [category])
-        : await db.getAllAsync<GuidedPrayer>(guidedQuery);
+    const personal = await db.getAllAsync<PersonalPrayer>(
+      'SELECT id, title, body, category, is_answered, created_at FROM personal_prayers ORDER BY created_at DESC'
+    );
 
-      const personalRows = await db.getAllAsync<PersonalPrayer>(
-        'SELECT id, title, body, category, is_answered, created_at FROM personal_prayers ORDER BY created_at DESC'
-      );
-
-      setGuided(guidedRows);
-      setPersonal(personalRows);
-    } catch (e) {
-      console.warn('[usePrayers] error:', e);
-    } finally {
-      setLoading(false);
-    }
+    return { guided, personal };
   }, [category]);
 
-  useEffect(() => { load(); }, [load]);
+  const { data, loading, refresh, setData } = useAsyncData(
+    category ?? '__all__',
+    fetchPrayers,
+    EMPTY
+  );
 
-  const addPersonalPrayer = useCallback(async (title: string, body: string, prayerCategory?: string) => {
-    try {
-      const db = getDb();
-      const id = `prayer-${Date.now()}`;
-      await db.runAsync(
-        'INSERT INTO personal_prayers (id, title, body, category, is_answered, created_at) VALUES (?, ?, ?, ?, 0, datetime("now"))',
-        [id, title, body, prayerCategory ?? null]
-      );
-      await load();
-      return id;
-    } catch (e) {
-      console.warn('[usePrayers] addPersonalPrayer error:', e);
-      return null;
-    }
-  }, [load]);
+  const addPersonalPrayer = useCallback(
+    async (title: string, body: string, prayerCategory?: string) => {
+      try {
+        const db = getDb();
+        const id = `prayer-${Date.now()}`;
+        await db.runAsync(
+          'INSERT INTO personal_prayers (id, title, body, category, is_answered, created_at) VALUES (?, ?, ?, ?, 0, datetime("now"))',
+          [id, title, body, prayerCategory ?? null]
+        );
+        await refresh();
+        return id;
+      } catch (e) {
+        console.warn('[usePrayers] addPersonalPrayer error:', e);
+        return null;
+      }
+    },
+    [refresh]
+  );
 
-  const markAnswered = useCallback(async (id: string) => {
-    try {
-      const db = getDb();
-      await db.runAsync('UPDATE personal_prayers SET is_answered = 1 WHERE id = ?', [id]);
-      setPersonal((prev) => prev.map((p) => p.id === id ? { ...p, is_answered: 1 } : p));
-    } catch (e) {
-      console.warn('[usePrayers] markAnswered error:', e);
-    }
-  }, []);
+  const markAnswered = useCallback(
+    async (id: string) => {
+      try {
+        const db = getDb();
+        await db.runAsync('UPDATE personal_prayers SET is_answered = 1 WHERE id = ?', [id]);
+        setData((current) => ({
+          ...current,
+          personal: current.personal.map((p) => (p.id === id ? { ...p, is_answered: 1 } : p)),
+        }));
+      } catch (e) {
+        console.warn('[usePrayers] markAnswered error:', e);
+      }
+    },
+    [setData]
+  );
 
-  const categories = [...new Set(guided.map((p) => p.category))].sort();
+  const categories = useMemo(
+    () => [...new Set(data.guided.map((p) => p.category))].sort(),
+    [data.guided]
+  );
 
-  return { guided, personal, loading, categories, refresh: load, addPersonalPrayer, markAnswered };
+  return {
+    guided: data.guided,
+    personal: data.personal,
+    loading,
+    categories,
+    refresh,
+    addPersonalPrayer,
+    markAnswered,
+  };
 }

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, useColorScheme, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 
@@ -14,19 +13,13 @@ import { getDb, generateId, nowIso } from '@/db/client';
 import VerseImageGenerator from '@/components/verse/VerseImageGenerator';
 import { useResolvedTheme } from '@/hooks/use-theme';
 
-interface HighlightItem {
-  verse_number: number;
-  color: string;
-}
-
 export default function BibleChapterScreen() {
   const { book, chapter } = useLocalSearchParams<{ book: string; chapter: string }>();
-  const { t } = useTranslation();
   const { isDark } = useResolvedTheme();
   const { preferences } = useAppStore();
   const { isPlayingSpeech, playVerseSpeech, activeSoundscape, selectSoundscape } = useAudioPlayer();
 
-  const [verses, setVerses] = useState<Array<{ verse_number: number; text: string }>>([]);
+  const [verses, setVerses] = useState<{ verse_number: number; text: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [fontSize, setFontSize] = useState<number>(18);
   const [selectedVerse, setSelectedVerse] = useState<{ number: number; text: string } | null>(null);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Pressable, StyleSheet, Text, useColorScheme } from 'react-native';
+import { View, Pressable, StyleSheet, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Sparkles } from '@/components/ui/LucideIcons';
@@ -8,7 +8,6 @@ import { AiAssistantModal } from './AiAssistantModal';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function FloatingAiButton() {
-  const isDark = useColorScheme() === 'dark';
   const [modalVisible, setModalVisible] = useState(false);
   const scale = useSharedValue(1);
   const glowOpacity = useSharedValue(0.4);

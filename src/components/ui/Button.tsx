@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
+import { useResolvedTheme } from '@/hooks/use-theme';
+
 export type ButtonVariant = 'primary' | 'secondary' | 'terracotta' | 'outline' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -25,8 +27,6 @@ interface ButtonProps extends Omit<PressableProps, 'style'> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
-
-import { useResolvedTheme } from '@/hooks/use-theme';
 
 export function Button({
   title,

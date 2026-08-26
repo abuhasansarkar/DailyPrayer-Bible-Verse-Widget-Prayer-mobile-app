@@ -1,21 +1,28 @@
-let SpeechModule: typeof import('expo-speech') | null = null;
-let AudioModule: typeof import('expo-av') | null = null;
+import type { AudioPlayer } from 'expo-audio';
 
-function getSpeech() {
-  if (SpeechModule) return SpeechModule;
+type SpeechModule = typeof import('expo-speech');
+type AudioModule = typeof import('expo-audio');
+
+let speechModule: SpeechModule | null = null;
+let audioModule: AudioModule | null = null;
+
+// Both modules are loaded lazily so the app still runs in environments where
+// the native module is missing (Expo Go on some platforms, web).
+function getSpeech(): SpeechModule | null {
+  if (speechModule) return speechModule;
   try {
-    SpeechModule = require('expo-speech');
-    return SpeechModule;
+    speechModule = require('expo-speech') as SpeechModule;
+    return speechModule;
   } catch {
     return null;
   }
 }
 
-function getAudio() {
-  if (AudioModule) return AudioModule;
+function getAudio(): AudioModule | null {
+  if (audioModule) return audioModule;
   try {
-    AudioModule = require('expo-av');
-    return AudioModule;
+    audioModule = require('expo-audio') as AudioModule;
+    return audioModule;
   } catch {
     return null;
   }
@@ -57,7 +64,7 @@ export const SOUNDSCAPES: Record<NonNullable<SoundscapeId>, { title: string; ico
   },
 };
 
-let activeSound: any = null;
+let activeSound: AudioPlayer | null = null;
 
 export async function speakText(
   text: string,
@@ -103,35 +110,36 @@ export async function stopSpeaking(): Promise<void> {
 }
 
 export async function toggleSoundscape(soundscapeId: SoundscapeId): Promise<boolean> {
-  const Audio = getAudio()?.Audio;
+  const Audio = getAudio();
   if (!Audio) {
-    console.warn('[AudioService] expo-av Audio module unavailable.');
+    console.warn('[AudioService] expo-audio module unavailable.');
     return false;
   }
 
   try {
-    if (activeSound) {
-      await activeSound.unloadAsync();
-      activeSound = null;
-    }
+    // Always tear down the previous player first — imperative players created
+    // with createAudioPlayer are not lifecycle-managed and leak without remove().
+    await stopSoundscape();
 
     if (!soundscapeId || !SOUNDSCAPES[soundscapeId]) {
       return false;
     }
 
     await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
-      shouldDuckAndroid: true,
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+      shouldRouteThroughEarpiece: false,
+      // Lower other apps' audio rather than stopping it, so a soundscape can
+      // layer under whatever the user already had playing.
+      interruptionMode: 'duckOthers',
     });
 
-    const soundUrl = SOUNDSCAPES[soundscapeId].url;
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: soundUrl },
-      { shouldPlay: true, isLooping: true, volume: 0.5 }
-    );
+    const player = Audio.createAudioPlayer({ uri: SOUNDSCAPES[soundscapeId].url });
+    player.loop = true;
+    player.volume = 0.5;
+    player.play();
 
-    activeSound = sound;
+    activeSound = player;
     return true;
   } catch (error) {
     console.warn('Soundscape play failed:', error);
@@ -140,14 +148,13 @@ export async function toggleSoundscape(soundscapeId: SoundscapeId): Promise<bool
 }
 
 export async function stopSoundscape(): Promise<void> {
-  if (activeSound) {
-    try {
-      await activeSound.stopAsync();
-      await activeSound.unloadAsync();
-    } catch {
-      // Ignore unload errors
-    } finally {
-      activeSound = null;
-    }
+  if (!activeSound) return;
+  try {
+    activeSound.pause();
+    activeSound.remove();
+  } catch {
+    // Ignore teardown errors — the player may already be released.
+  } finally {
+    activeSound = null;
   }
 }

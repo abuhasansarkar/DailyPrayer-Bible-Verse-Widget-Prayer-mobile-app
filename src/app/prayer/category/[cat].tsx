@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+
 import { View, Text, ScrollView, Pressable, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -32,7 +32,6 @@ export default function PrayerCategoryScreen() {
   const meta = CATEGORY_META[cat ?? ''] ?? { icon: '🙏', color: '#D98262', label: cat ?? 'Prayers', description: '' };
 
   const bg = isDark ? '#1E1C18' : '#FFF9EE';
-  const surfaceBg = isDark ? '#2A2720' : '#F1E6D3';
   const textPrimary = isDark ? '#F5EDD8' : '#292B28';
   const textSecondary = isDark ? '#B8AD97' : '#77766F';
 

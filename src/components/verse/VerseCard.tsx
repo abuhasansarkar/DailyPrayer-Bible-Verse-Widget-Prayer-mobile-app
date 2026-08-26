@@ -3,7 +3,8 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
-import { useToast } from '@/components/ui/Toast';
+import { Toast, useToast } from '@/components/ui/Toast';
+import { useFavoriteToggle } from '@/hooks/use-favorite-toggle';
 
 interface VerseCardProps {
   id: string;
@@ -21,7 +22,8 @@ export function VerseCard({
 }: VerseCardProps) {
   const systemScheme = useColorScheme();
   const { colorScheme } = useAppStore();
-  const { isFavorite, toggleFavorite } = useUserStore();
+  const { isFavorite } = useUserStore();
+  const toggleFavoriteGated = useFavoriteToggle();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
   const { toastProps, show } = useToast();
 
@@ -32,8 +34,9 @@ export function VerseCard({
   const textSecondary = isDark ? '#B8AD97' : '#77766F';
 
   const handleSave = async () => {
-    await toggleFavorite('verse', id);
-    show(saved ? 'Removed from favorites' : 'Saved to favorites ✨', saved ? 'info' : 'success');
+    const added = await toggleFavoriteGated('verse', id);
+    if (added === null) return; // blocked by the free-tier limit
+    show(added ? 'Saved to favorites ✨' : 'Removed from favorites', added ? 'success' : 'info');
     onSave?.(id);
   };
 
@@ -71,7 +74,7 @@ export function VerseCard({
           color: textPrimary,
           marginBottom: 12,
         }} numberOfLines={compact ? 3 : undefined}>
-          "{text}"
+          &quot;{text}&quot;
         </Text>
 
         {/* Reference + actions */}
@@ -108,6 +111,7 @@ export function VerseCard({
           )}
         </View>
       </Pressable>
+      <Toast {...toastProps} />
     </Animated.View>
   );
 }

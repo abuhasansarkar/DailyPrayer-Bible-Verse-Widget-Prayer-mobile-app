@@ -3,7 +3,7 @@ import { useAppStore } from '@/store/app.store';
 
 interface CalendarActivityProps {
   /** Array of 28-35 day entries for the last 4-5 weeks */
-  data: Array<{ date: string; isComplete: boolean; activities: string[] }>;
+  data: { date: string; isComplete: boolean; activities: string[] }[];
 }
 
 export function CalendarActivity({ data }: CalendarActivityProps) {

@@ -1,13 +1,24 @@
 import { supabase, getCurrentUserId } from './supabase';
 import { getDb } from '@/db/client';
+import { IS_SUPABASE_CONFIGURED } from '@/constants/env';
 
+/**
+ * Row-level sync of favourites, journal entries and personal prayers.
+ *
+ * Targets the `sync_*` tables, matching the schema runFullSync() in
+ * ./supabase.ts already writes to. This class previously wrote to a separate
+ * set of table names (favorites / journal_entries / prayers), so the two sync
+ * paths could never have pointed at the same backend.
+ *
+ * NOTE: this is a push. Nothing reads back from Supabase yet, so a reinstall
+ * does not restore. See plan.md B6 before relying on it for backup.
+ */
 export class SyncEngine {
   private static isSyncing = false;
 
-  /**
-   * Run full bidirectional sync for bookmarks, journal entries, prayers, and streaks.
-   */
   static async syncAll(): Promise<{ success: boolean; syncedCount: number }> {
+    // Without config every request would fail against the placeholder client.
+    if (!IS_SUPABASE_CONFIGURED) return { success: false, syncedCount: 0 };
     if (this.isSyncing) return { success: false, syncedCount: 0 };
     this.isSyncing = true;
     let syncedCount = 0;
@@ -32,15 +43,13 @@ export class SyncEngine {
 
       if (localFavorites && localFavorites.length > 0) {
         const payload = localFavorites.map(fav => ({
-          id: fav.id,
           user_id: userId,
           type: fav.type,
           ref_id: fav.ref_id,
-          note: fav.note,
-          created_at: fav.created_at,
+          synced_at: new Date().toISOString(),
         }));
 
-        const { error } = await supabase.from('favorites').upsert(payload, { onConflict: 'id' });
+        const { error } = await supabase.from('sync_favorites').upsert(payload, { onConflict: 'user_id,type,ref_id' });
         if (!error) syncedCount += localFavorites.length;
       }
 
@@ -56,16 +65,14 @@ export class SyncEngine {
 
       if (localJournals && localJournals.length > 0) {
         const payload = localJournals.map(j => ({
-          id: j.id,
           user_id: userId,
-          title: j.title || '',
-          content: j.body,
-          mood: j.mood,
-          created_at: j.created_at,
+          entry_id: j.id,
+          entry_json: JSON.stringify(j),
           updated_at: j.updated_at || j.created_at,
+          synced_at: new Date().toISOString(),
         }));
 
-        const { error } = await supabase.from('journal_entries').upsert(payload, { onConflict: 'id' });
+        const { error } = await supabase.from('sync_journal_entries').upsert(payload, { onConflict: 'user_id,entry_id' });
         if (!error) syncedCount += localJournals.length;
       }
 
@@ -81,16 +88,14 @@ export class SyncEngine {
 
       if (localPrayers && localPrayers.length > 0) {
         const payload = localPrayers.map(p => ({
-          id: p.id,
           user_id: userId,
-          title: p.title,
-          content: p.body,
-          category: p.category,
-          is_answered: Boolean(p.is_answered),
-          created_at: p.created_at,
+          prayer_id: p.id,
+          prayer_json: JSON.stringify(p),
+          updated_at: p.created_at,
+          synced_at: new Date().toISOString(),
         }));
 
-        const { error } = await supabase.from('prayers').upsert(payload, { onConflict: 'id' });
+        const { error } = await supabase.from('sync_personal_prayers').upsert(payload, { onConflict: 'user_id,prayer_id' });
         if (!error) syncedCount += localPrayers.length;
       }
 

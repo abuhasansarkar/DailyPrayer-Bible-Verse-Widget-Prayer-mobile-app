@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Share,
-  Text,
-  TextInput,
-  useColorScheme,
-  View,
-} from "react-native";
+import { Pressable, RefreshControl, ScrollView, Share, Text, TextInput, View } from "react-native";
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -26,22 +17,13 @@ import { MilestoneCelebration } from "@/components/streak/MilestoneCelebration";
 import { StreakCard } from "@/components/streak/StreakCard";
 import { Toast, useToast } from "@/components/ui/Toast";
 import VerseImageGenerator from "@/components/verse/VerseImageGenerator";
-import { getDb, todayDate } from "@/db/client";
+import { getDb } from "@/db/client";
 import { useDailyVerse } from "@/hooks/use-daily-verse";
+import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
 import { useResolvedTheme } from "@/hooks/use-theme";
-import { useAppStore } from "@/store/app.store";
+
 import { useUserStore } from "@/store/user.store";
 import type { StreakMilestone } from "@/types/user";
-
-interface DailyVerseRow {
-  id: string;
-  date: string;
-  reflection: string;
-  prayer: string;
-  verse_reference: string;
-  verse_text: string;
-  verse_book: string;
-}
 
 function getGreeting(name?: string): string {
   const hour = new Date().getHours();
@@ -59,18 +41,28 @@ export default function TodayScreen() {
     milestones,
     recordActivity,
     displayName,
-    toggleFavorite,
     isFavorite,
   } = useUserStore();
+  const toggleFavoriteGated = useFavoriteToggle();
   const { toastProps, show } = useToast();
 
-  const [dailyVerse, setDailyVerse] = useState<DailyVerseRow | null>(null);
+  // Daily verse loading lives in useDailyVerse — this screen used to carry a
+  // second copy of the same query, which drifted (no CDN fallback) and set
+  // state synchronously inside an effect.
+  const { verse: dailyVerse, loading, refresh: refreshVerse } = useDailyVerse();
+
   const [gratitudeText, setGratitudeText] = useState("");
   const [gratitudeSaved, setGratitudeSaved] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [milestone, setMilestone] = useState<StreakMilestone | null>(null);
   const [showCardStudio, setShowCardStudio] = useState(false);
+
+  // Derive the milestone banner during render instead of writing it from an
+  // effect; `dismissedMilestone` remembers the one the user has closed.
+  const [dismissedMilestone, setDismissedMilestone] = useState<number | null>(null);
+  const earnedMilestone: StreakMilestone | null =
+    milestones.find((m) => m.achieved && m.days === streak.currentStreak) ?? null;
+  const milestone =
+    earnedMilestone && earnedMilestone.days !== dismissedMilestone ? earnedMilestone : null;
 
   // UI-thread Reanimated pulse animation for 60fps skeleton rendering
   const pulseOpacity = useSharedValue(1);
@@ -85,60 +77,6 @@ export default function TodayScreen() {
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: pulseOpacity.value,
   }));
-
-  const loadTodayData = useCallback(async () => {
-    try {
-      const db = getDb();
-      const today = todayDate();
-      const row = await db.getFirstAsync<DailyVerseRow>(
-        `
-        SELECT dv.id, dv.date, dv.reflection, dv.prayer,
-               v.reference as verse_reference, v.text as verse_text, v.book as verse_book
-        FROM daily_verses dv
-        JOIN verses v ON v.id = dv.verse_id
-        WHERE dv.date = ?
-        LIMIT 1
-      `,
-        [today],
-      );
-
-      if (!row) {
-        const verse = await db.getFirstAsync<{
-          reference: string;
-          text: string;
-          book: string;
-          id: string;
-        }>(
-          "SELECT id, reference, text, book FROM verses WHERE is_featured = 1 ORDER BY RANDOM() LIMIT 1",
-        );
-        if (verse) {
-          setDailyVerse({
-            id: verse.id,
-            date: today,
-            reflection: "",
-            prayer: "",
-            verse_reference: verse.reference,
-            verse_text: verse.text,
-            verse_book: verse.book,
-          });
-        }
-      } else {
-        setDailyVerse(row);
-        // Record verse-read activity + check milestone
-        await recordActivity("verse");
-        const hit = useUserStore.getState().checkMilestone();
-        if (hit) setMilestone(hit);
-      }
-    } catch (e) {
-      console.warn("Error loading today data:", e);
-    } finally {
-      setLoading(false);
-    }
-  }, [recordActivity]);
-
-  useEffect(() => {
-    loadTodayData();
-  }, [loadTodayData]);
 
   const saveGratitude = useCallback(async () => {
     if (!gratitudeText.trim()) return;
@@ -162,19 +100,19 @@ export default function TodayScreen() {
 
   const handleSaveVerse = useCallback(async () => {
     if (!dailyVerse) return;
-    await toggleFavorite("verse", dailyVerse.id);
-    const saved = isFavorite("verse", dailyVerse.id);
+    const added = await toggleFavoriteGated("verse", dailyVerse.id);
+    if (added === null) return; // blocked by the free-tier limit
     show(
-      saved ? "Removed from favorites" : "Verse saved! 🔖",
-      saved ? "info" : "success",
+      added ? "Verse saved! 🔖" : "Removed from favorites",
+      added ? "success" : "info",
     );
-  }, [dailyVerse, isFavorite, show, toggleFavorite]);
+  }, [dailyVerse, show, toggleFavoriteGated]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadTodayData();
+    await refreshVerse();
     setRefreshing(false);
-  }, [loadTodayData]);
+  }, [refreshVerse]);
 
   const bg = isDark ? "#1E1C18" : "#FFF9EE";
   const surfaceBg = isDark ? "#2A2720" : "#F1E6D3";
@@ -515,7 +453,7 @@ export default function TodayScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={() => router.push("/settings/screen")}
+              onPress={() => router.push("/settings")}
               style={{
                 width: 40,
                 height: 40,
@@ -571,11 +509,11 @@ export default function TodayScreen() {
                   marginBottom: 16,
                 }}
               >
-                "
+                &quot;
                 {dailyVerse.verse_text.length > 200
                   ? dailyVerse.verse_text.slice(0, 200) + "…"
                   : dailyVerse.verse_text}
-                "
+                &quot;
               </Text>
               <View
                 style={{
@@ -775,7 +713,7 @@ export default function TodayScreen() {
                   color: textSecondary,
                 }}
               >
-                Tap to open today's guided prayer
+                Tap to open today&apos;s guided prayer
               </Text>
             </View>
             <Text style={{ fontSize: 18, color: textSecondary }}>→</Text>
@@ -897,7 +835,7 @@ export default function TodayScreen() {
               marginTop: 8,
             }}
           >
-            "{t("today.mascotMessage")}"
+            &quot;{t("today.mascotMessage")}&quot;
           </Text>
         </Animated.View>
       </ScrollView>
@@ -905,7 +843,7 @@ export default function TodayScreen() {
       {/* Milestone modal */}
       <MilestoneCelebration
         milestone={milestone}
-        onDismiss={() => setMilestone(null)}
+        onDismiss={() => setDismissedMilestone(earnedMilestone?.days ?? null)}
       />
 
       {/* Verse Card Exporter Studio Modal */}

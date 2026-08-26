@@ -1,42 +1,25 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, useColorScheme, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { useAppStore } from '@/store/app.store';
+
 import { useSubscriptionStore } from '@/store/subscription.store';
 import { purchasePackage, restorePurchases } from '@/services/revenuecat';
 import { Mascot } from '@/components/mascot/Mascot';
 import { Button } from '@/components/ui/Button';
 import { useResolvedTheme } from '@/hooks/use-theme';
 
-const FREE_FEATURES = [
-  'Daily Bible verse',
-  'Daily guided prayer',
-  '2 basic widget themes',
-  '2 active reminders',
-  'Prayer journal',
-  'Basic Bible search',
-  'Faith streak tracking',
-];
-
-const PREMIUM_FEATURES = [
-  { icon: '🎨', text: 'All 20 widget themes' },
-  { icon: '📸', text: 'Custom photo widget backgrounds' },
-  { icon: '🔔', text: 'Unlimited prayer reminders' },
-  { icon: '🔖', text: 'Unlimited favorites & collections' },
-  { icon: '📖', text: 'Complete prayer & devotional library' },
-  { icon: '✨', text: 'Advanced share templates' },
-  { icon: '📡', text: 'Offline access & cloud sync' },
-  { icon: '🚫', text: 'No ads, no watermarks' },
-  { icon: '📊', text: 'Advanced streak insights' },
-];
+// Copy lives in @/constants/entitlements alongside the limits it describes,
+// so the paywall cannot advertise a feature that is not actually gated.
+import { FREE_FEATURES, PREMIUM_FEATURES } from '@/constants/entitlements';
 
 export default function PremiumScreen() {
   const { t } = useTranslation();
   const { isDark } = useResolvedTheme();
   const { packages, isLoading, tier } = useSubscriptionStore();
+  const isSubscribed = tier !== 'free';
 
   const [selectedPeriod, setSelectedPeriod] = useState<'monthly' | 'annual'>('annual');
   const [purchasing, setPurchasing] = useState(false);
@@ -153,6 +136,20 @@ export default function PremiumScreen() {
             </View>
           ))}
         </Animated.View>
+
+        {/* What the free tier already includes — shown so the upgrade is an
+            honest comparison rather than an implied paywall on everything. */}
+        <Animated.View entering={FadeInDown.duration(400).delay(360)} style={{ gap: 10, marginBottom: 24 }}>
+          <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 16, color: textPrimary, marginBottom: 4 }}>
+            Always free:
+          </Text>
+          {FREE_FEATURES.map((feat) => (
+            <View key={feat} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 15, width: 28, color: '#96AA88' }}>✓</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, color: textSecondary, flex: 1 }}>{feat}</Text>
+            </View>
+          ))}
+        </Animated.View>
       </ScrollView>
 
       {/* CTA */}
@@ -162,21 +159,39 @@ export default function PremiumScreen() {
         backgroundColor: bg, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(245,237,216,0.07)' : 'rgba(41,43,40,0.07)',
         gap: 8,
       }}>
-        <Button
-          title={purchasing ? 'Processing...' : selectedPkg?.introductoryOffer ? t('premium.trial', { days: 7 }) : t('premium.subscribe')}
-          onPress={handlePurchase}
-          loading={purchasing || isLoading}
-          size="lg"
-          variant="primary"
-        />
+        {/* An already-subscribed user previously still saw a Subscribe CTA
+            and could be charged again. Show their status instead. */}
+        {isSubscribed ? (
+          <>
+            <View style={{ alignItems: 'center', paddingVertical: 12, gap: 4 }}>
+              <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 16, color: textPrimary }}>
+                {tier === 'lifetime' ? 'You have lifetime access 💛' : 'You’re subscribed 💛'}
+              </Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: textSecondary }}>
+                Thank you for supporting DailyPrayer.
+              </Text>
+            </View>
+            <Button title="Done" onPress={() => router.back()} size="lg" variant="primary" />
+          </>
+        ) : (
+          <>
+            <Button
+              title={purchasing ? 'Processing...' : selectedPkg?.introductoryOffer ? t('premium.trial', { days: 7 }) : t('premium.subscribe')}
+              onPress={handlePurchase}
+              loading={purchasing || isLoading}
+              size="lg"
+              variant="primary"
+            />
 
-        <Pressable onPress={handleRestore} style={{ alignItems: 'center', paddingVertical: 8 }}>
-          <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: textSecondary }}>{t('premium.restore')}</Text>
-        </Pressable>
+            <Pressable onPress={handleRestore} style={{ alignItems: 'center', paddingVertical: 8 }}>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: textSecondary }}>{t('premium.restore')}</Text>
+            </Pressable>
 
-        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: textSecondary, textAlign: 'center' }}>
-          {t('premium.termsNote')}
-        </Text>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: textSecondary, textAlign: 'center' }}>
+              {t('premium.termsNote')}
+            </Text>
+          </>
+        )}
       </View>
     </SafeAreaView>
   );

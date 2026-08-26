@@ -2,6 +2,7 @@ import { View, Text, Pressable, useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useAppStore } from '@/store/app.store';
+import { useIsPremium } from '@/constants/entitlements';
 
 const CATEGORY_META: Record<string, { icon: string; color: string }> = {
   morning:         { icon: '🌅', color: '#F2B84B' },
@@ -37,6 +38,11 @@ export function PrayerCard({
   const systemScheme = useColorScheme();
   const { colorScheme } = useAppStore();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
+  const isPremiumUser = useIsPremium();
+
+  // A premium prayer shows a lock badge; tapping it must actually stop at the
+  // paywall rather than opening the content behind the badge.
+  const isLocked = isPremium && !isPersonal && !isPremiumUser;
 
   const cardBg = isDark ? '#332F26' : '#FFFFFF';
   const textPrimary = isDark ? '#F5EDD8' : '#292B28';
@@ -45,6 +51,7 @@ export function PrayerCard({
   const meta = CATEGORY_META[category] ?? { icon: '🙏', color: '#D98262' };
 
   const handlePress = () => {
+    if (isLocked) { router.push('/premium'); return; }
     if (onPress) { onPress(id); return; }
     router.push(`/prayer/${id}`);
   };
@@ -84,7 +91,7 @@ export function PrayerCard({
             }} numberOfLines={1}>
               {title}
             </Text>
-            {isPremium && !isPersonal && (
+            {isLocked && (
               <View style={{ backgroundColor: '#F2B84B', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
                 <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 9, color: '#292B28' }}>PRO</Text>
               </View>

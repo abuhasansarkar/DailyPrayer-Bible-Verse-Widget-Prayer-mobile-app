@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { getDb } from '@/db/client';
@@ -35,14 +35,18 @@ export class ExportImportService {
       };
 
       const jsonString = JSON.stringify(payload, null, 2);
-      const fileUri = `${FileSystem.cacheDirectory}DailyPrayer_Backup_${Date.now()}.json`;
+      const backupFile = new File(
+        Paths.cache,
+        `DailyPrayer_Backup_${new Date().toISOString().split('T')[0]}.json`
+      );
 
-      await FileSystem.writeAsStringAsync(fileUri, jsonString, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      // create() throws if the file already exists (same-day re-export).
+      if (backupFile.exists) backupFile.delete();
+      backupFile.create();
+      backupFile.write(jsonString);
 
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
+        await Sharing.shareAsync(backupFile.uri, {
           mimeType: 'application/json',
           dialogTitle: 'Export DailyPrayer Data',
           UTI: 'public.json',
@@ -69,10 +73,8 @@ export class ExportImportService {
         return { success: false, importedCount: 0, canceled: true };
       }
 
-      const fileUri = result.assets[0].uri;
-      const fileContent = await FileSystem.readAsStringAsync(fileUri, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      const fileUri = result.assets[0]!.uri;
+      const fileContent = new File(fileUri).textSync();
 
       return await this.importUserData(fileContent);
     } catch (e) {

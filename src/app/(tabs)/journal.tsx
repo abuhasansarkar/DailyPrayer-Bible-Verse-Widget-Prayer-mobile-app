@@ -8,7 +8,6 @@ import { useJournal } from '@/hooks/use-journal';
 import { AppIcon } from '@/components/ui/AppIcon';
 
 const FILTERS = ['all', 'prayer', 'gratitude', 'reflection'] as const;
-type JournalFilter = (typeof FILTERS)[number];
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -119,7 +118,7 @@ export default function JournalTabScreen() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 15, color: textPrimary }} numberOfLines={1}>{entry.title || 'Untitled entry'}</Text>
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: textSecondary }}>{entry.type} • {formatDate(entry.created_at)}</Text>
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: textSecondary }}>{entry.type} â€¢ {formatDate(entry.created_at)}</Text>
                     </View>
                     <AppIcon name="chevronRight" size={18} color={textSecondary} />
                   </View>

@@ -1,7 +1,5 @@
 import { useEffect } from 'react';
-import {
-  View, Text, Pressable, Modal, Dimensions, TouchableWithoutFeedback,
-} from 'react-native';
+import { View, Text, Modal, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle,
   withSpring, withTiming, runOnJS, Easing,

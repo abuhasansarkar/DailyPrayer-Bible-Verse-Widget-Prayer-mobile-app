@@ -27,7 +27,7 @@ interface AppState {
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   goals: [],
-  preferredTranslation: 'NIV',
+  preferredTranslation: 'KJV',
   preferredCategories: [],
   appTheme: 'system',
   fontSize: 'default',

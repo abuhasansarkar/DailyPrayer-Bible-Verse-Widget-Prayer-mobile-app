@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import { subDays, format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { DayActivity, StreakData, StreakMilestone, MilestoneDay } from '@/types/user';
 import type { StreakActivity } from '@/types/user';
+import { canAddMore } from '@/constants/entitlements';
+// db/client has no dependency on this store, so a static import is safe and
+// keeps the module mockable in tests (dynamic import() is not interceptable).
+import { getDb, parseJson } from '@/db/client';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // User Store — profile, streak, favorites
@@ -17,11 +21,17 @@ interface UserState {
   setProfile: (name: string, avatarUri?: string) => void;
   setStreak: (streak: StreakData) => void;
   recordActivity: (activity: StreakActivity) => Promise<void>;
-  toggleFavorite: (type: string, id: string) => Promise<void>;
+  toggleFavorite: (type: string, id: string) => Promise<ToggleFavoriteResult>;
   isFavorite: (type: string, id: string) => boolean;
   checkMilestone: () => StreakMilestone | null;
   loadUserDataFromDb: () => Promise<void>;
 }
+
+/**
+ * `blocked` is returned when a free user is at the favourites limit and tried
+ * to add (never when removing), so callers can show the paywall.
+ */
+export type ToggleFavoriteResult = { ok: true; added: boolean } | { ok: false; reason: 'limit' };
 
 const MILESTONE_DATA: Record<MilestoneDay, { title: string; message: string; icon: string }> = {
   3:   { title: '3-Day Journey',    message: 'You\'ve taken three faithful steps. Every great journey begins this way.', icon: '🌱' },
@@ -58,6 +68,26 @@ const buildEmptyWeek = (): DayActivity[] => {
   });
 };
 
+/**
+ * Slide a cached week window forward so it ends on `today`.
+ *
+ * `thisWeek` is built once when the app loads. If the app stays alive across
+ * midnight — routine on mobile, where the process is suspended rather than
+ * killed — the window goes stale and no longer contains today, so writes for
+ * today would silently land nowhere. Re-anchoring keeps existing days' data
+ * and appends empty entries for the days that have since elapsed.
+ */
+const realignWeek = (week: DayActivity[], today: string): DayActivity[] => {
+  if (week.length === 7 && week[6]?.date === today) return week;
+
+  const byDate = new Map(week.map((d) => [d.date, d]));
+  const now = parseISO(today);
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = format(subDays(now, 6 - i), 'yyyy-MM-dd');
+    return byDate.get(date) ?? { date, activities: [], isComplete: false };
+  });
+};
+
 export const useUserStore = create<UserState>((set, get) => ({
   displayName: '',
   avatarUri: undefined,
@@ -77,33 +107,41 @@ export const useUserStore = create<UserState>((set, get) => ({
 
   recordActivity: async (activity) => {
     const today = getIsoToday();
+    const yesterday = format(subDays(parseISO(today), 1), 'yyyy-MM-dd');
+
+    // Re-anchor before reading, so a window built on an earlier date still
+    // contains today.
+    const alignedWeek = realignWeek(get().streak.thisWeek, today);
+    const activityAlreadyPresent =
+      alignedWeek.find((d) => d.date === today)?.activities.includes(activity) ?? false;
+
     let todayActivities: StreakActivity[] = [];
     let isNowComplete = false;
-    let activityAlreadyPresent = false;
-
-    const currentTodayDay = get().streak.thisWeek.find((d) => d.date === today);
-    if (currentTodayDay && currentTodayDay.activities.includes(activity)) {
-      activityAlreadyPresent = true;
-    }
 
     set((s) => {
-      const week = s.streak.thisWeek.map((day) => {
+      const week = realignWeek(s.streak.thisWeek, today).map((day) => {
         if (day.date !== today) return day;
         const activities = day.activities.includes(activity)
           ? day.activities
           : [...day.activities, activity];
-        todayActivities = activities;
         return { ...day, activities, isComplete: activities.length > 0 };
       });
 
       const todayDay = week.find((d) => d.date === today);
-      const wasComplete = s.streak.thisWeek.find((d) => d.date === today)?.isComplete;
+      todayActivities = todayDay?.activities ?? [];
+      const wasComplete = realignWeek(s.streak.thisWeek, today)
+        .find((d) => d.date === today)?.isComplete ?? false;
       const nowComplete = todayDay?.isComplete ?? false;
       isNowComplete = nowComplete;
 
       let { currentStreak, longestStreak, totalDays } = s.streak;
       if (!wasComplete && nowComplete) {
-        currentStreak += 1;
+        // A streak only continues if yesterday was also completed; otherwise
+        // today starts a fresh run of 1. Incrementing unconditionally would
+        // carry a stale count across a gap of missed days.
+        const yesterdayComplete =
+          week.find((d) => d.date === yesterday)?.isComplete ?? false;
+        currentStreak = yesterdayComplete ? currentStreak + 1 : 1;
         totalDays += 1;
         if (currentStreak > longestStreak) longestStreak = currentStreak;
       }
@@ -119,7 +157,6 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
 
     try {
-      const { getDb } = await import('@/db/client');
       const db = getDb();
       await db.runAsync(
         `INSERT INTO streak_log (id, date, activities, is_complete)
@@ -136,6 +173,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     const key = `${type}:${id}`;
     const wasFavorite = get().favoriteIds.has(key);
 
+    // Removing is always allowed; only adding past the free limit is gated.
+    if (!wasFavorite && !canAddMore('favorites', get().favoriteIds.size)) {
+      return { ok: false, reason: 'limit' };
+    }
+
     set((s) => {
       const next = new Set(s.favoriteIds);
       if (next.has(key)) next.delete(key);
@@ -144,7 +186,6 @@ export const useUserStore = create<UserState>((set, get) => ({
     });
 
     try {
-      const { getDb } = await import('@/db/client');
       const db = getDb();
       if (wasFavorite) {
         await db.runAsync('DELETE FROM favorites WHERE type = ? AND ref_id = ?', [type, id]);
@@ -157,6 +198,8 @@ export const useUserStore = create<UserState>((set, get) => ({
     } catch (e) {
       console.warn('[UserStore] Error writing favorite to DB:', e);
     }
+
+    return { ok: true, added: !wasFavorite };
   },
 
   isFavorite: (type, id) => get().favoriteIds.has(`${type}:${id}`),
@@ -170,7 +213,6 @@ export const useUserStore = create<UserState>((set, get) => ({
 
   loadUserDataFromDb: async () => {
     try {
-      const { getDb, parseJson } = await import('@/db/client');
       const db = getDb();
 
       // Load favorites

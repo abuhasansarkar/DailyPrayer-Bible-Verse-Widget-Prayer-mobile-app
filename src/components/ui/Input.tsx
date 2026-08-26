@@ -1,4 +1,4 @@
-import { View, TextInput, Text, Pressable } from 'react-native';
+import { View, TextInput, Text } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useResolvedTheme } from '@/hooks/use-theme';
 
