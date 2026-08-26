@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, Alert } from 'react-native';
 import { Play, Square, X, Music, Sparkles } from '@/components/ui/LucideIcons';
 import { speakText, stopSpeaking, toggleSoundscape, stopSoundscape, SOUNDSCAPES, SoundscapeId } from '@/services/audio';
 
@@ -32,9 +32,20 @@ export function AudioPlayerModal({ visible, onClose, verseText, verseReference }
     if (activeSoundscape === id) {
       await stopSoundscape();
       setActiveSoundscape(null);
-    } else {
-      setActiveSoundscape(id);
-      await toggleSoundscape(id);
+      return;
+    }
+
+    // Mark active only once playback actually started. Setting it up front and
+    // ignoring the result left the tile showing as playing with silence behind
+    // it whenever the stream failed — these are remote URLs, so offline is the
+    // normal case, not an edge case.
+    const started = await toggleSoundscape(id);
+    setActiveSoundscape(started ? id : null);
+    if (!started) {
+      Alert.alert(
+        'Could not play',
+        'This soundscape streams from the internet. Check your connection and try again.'
+      );
     }
   };
 

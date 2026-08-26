@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { getDb, todayDate } from '@/db/client';
-import { useUserStore } from '@/store/user.store';
 import { useAsyncData } from './use-async-data';
 
 export interface DailyVerseRow {
@@ -13,6 +12,14 @@ export interface DailyVerseRow {
   verse_book: string;
 }
 
+/**
+ * Today's verse.
+ *
+ * This hook is read-only. It used to call `recordActivity('verse')` from
+ * inside the fetcher, which meant simply rendering the home tab completed the
+ * day's streak. The credit now happens in app/verse/[id].tsx, when the verse
+ * is actually opened.
+ */
 export function useDailyVerse() {
   const today = todayDate();
 
@@ -30,8 +37,6 @@ export function useDailyVerse() {
     `, [today]);
 
     if (row) {
-      // Reading today's verse counts toward the streak.
-      await useUserStore.getState().recordActivity('verse');
       return row;
     }
 

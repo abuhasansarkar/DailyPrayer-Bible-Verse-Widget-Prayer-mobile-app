@@ -1,5 +1,6 @@
 import { View, Text, useColorScheme } from 'react-native';
 import { useAppStore } from '@/store/app.store';
+import { todayDate } from '@/db/client';
 
 interface CalendarActivityProps {
   /** Array of 28-35 day entries for the last 4-5 weeks */
@@ -13,7 +14,7 @@ export function CalendarActivity({ data }: CalendarActivityProps) {
 
   const textSecondary = isDark ? '#6A6355' : '#B8B2AA';
   const surfaceBg = isDark ? '#2A2720' : '#F1E6D3';
-  const todayStr = new Date().toISOString().split('T')[0]!;
+  const todayStr = todayDate();
 
   const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 

@@ -1,13 +1,17 @@
 import { BookOpen, CheckCircle, ChevronRight, Copy, Heart, Send, Sparkles, X } from "@/components/ui/LucideIcons";
 import {
-  askOpenCodeZen,
-  getOpenCodeZenModel,
-  OPENCODE_ZEN_FREE_MODELS,
-  OpenCodeZenModelId,
-  setOpenCodeZenModel,
-} from "@/services/opencode-zen";
+  AI_MODELS,
+  AiMessage,
+  AiModelId,
+  AiReply,
+  askAi,
+  DEFAULT_MODEL,
+  getAiModel,
+  isAiConfigured,
+  setAiModel,
+} from "@/services/ai-assistant";
 import * as Haptics from "expo-haptics";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { useResolvedTheme } from "@/hooks/use-theme";
 
@@ -19,6 +23,25 @@ try {
 }
 
 type FeatureTab = "prayer" | "scripture" | "chat";
+
+/** How many prior turns to send with a chat message. Keeps prompts bounded. */
+const MAX_HISTORY_TURNS = 10;
+
+/** Label shown above any reply that did not come from the model. */
+function fallbackNotice(source: AiReply["source"] | null | undefined): string | null {
+  switch (source) {
+    case "offline":
+      return "Offline reflection — the AI companion could not be reached.";
+    case "unavailable":
+      return "The AI companion is not enabled in this build.";
+    case "rate-limited":
+      return "Too many requests just now.";
+    case "crisis":
+      return "Support resources";
+    default:
+      return null;
+  }
+}
 
 type Props = {
   visible: boolean;
@@ -61,29 +84,53 @@ const PRAYER_TOPICS = [
 export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
   const { isDark } = useResolvedTheme();
   const [activeTab, setActiveTab] = useState<FeatureTab>("prayer");
-  const [selectedModel, setSelectedModel] = useState<OpenCodeZenModelId>(
-    "deepseek-v4-flash-free",
-  );
+  const [selectedModel, setSelectedModel] = useState<AiModelId>(DEFAULT_MODEL);
+  const aiConfigured = isAiConfigured();
 
   // Form states
   const [customPrompt, setCustomPrompt] = useState("");
   const [response, setResponse] = useState("");
+  // Set alongside `response` so a non-model reply is never shown as AI output.
+  const [responseSource, setResponseSource] = useState<AiReply["source"] | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Aborts the in-flight request when the sheet closes or unmounts, so a late
+  // reply never lands on a screen the user has already dismissed.
+  const abortRef = useRef<AbortController | null>(null);
+
+  const cancelInFlight = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }, []);
+
+  const startRequest = useCallback(() => {
+    cancelInFlight();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    return controller.signal;
+  }, [cancelInFlight]);
+
+  useEffect(() => cancelInFlight, [cancelInFlight]);
+
+  // Closing the sheet cancels whatever is running.
+  useEffect(() => {
+    if (!visible) cancelInFlight();
+  }, [visible, cancelInFlight]);
+
   // Chat state
   const [chatMessages, setChatMessages] = useState<
-    { role: "user" | "assistant"; text: string }[]
+    { role: "user" | "assistant"; text: string; source?: AiReply["source"] }[]
   >([
     {
       role: "assistant",
-      text: "Hello! I am your AI Prayer & Scripture Companion, powered by AI. How can I pray with you or guide your Bible study today?",
+      text: "Hello! I am your prayer and scripture companion. How can I pray with you or guide your Bible study today?",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
 
   useEffect(() => {
-    getOpenCodeZenModel().then(setSelectedModel).catch(console.warn);
+    getAiModel().then(setSelectedModel).catch(console.warn);
   }, []);
 
   // Adjust state during render rather than in an effect: this is the supported
@@ -98,63 +145,80 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
     }
   }
 
-  const handleModelChange = async (modelId: OpenCodeZenModelId) => {
+  const handleModelChange = async (modelId: AiModelId) => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await setOpenCodeZenModel(modelId);
       setSelectedModel(modelId);
+      await setAiModel(modelId);
     } catch (err) {
       console.warn(err);
     }
   };
+
+  /** Requests that were cancelled by closing the sheet are not errors. */
+  const isAbort = (err: unknown) =>
+    err instanceof Error && err.name === "AbortError";
 
   const handleGeneratePrayer = async (topicPrompt?: string) => {
     const promptToUse =
       topicPrompt ||
       customPrompt ||
       "a uplifting daily prayer for grace and peace";
+    const signal = startRequest();
     setLoading(true);
     setResponse("");
+    setResponseSource(null);
     setCopied(false);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const res = await askOpenCodeZen(
+      const reply = await askAi(
         `Write a deeply meaningful Christian prayer about: ${promptToUse}. Include an inspiring Bible verse.`,
         {
           system:
-            "You are an inspiring, compassionate Christian prayer assistant. Write formatted prayers with a verse.",
+            "You are an inspiring, compassionate Christian prayer assistant. Write formatted prayers with a verse. Quote only public-domain translations such as the King James Version.",
           model: selectedModel,
+          signal,
         },
       );
-      setResponse(res);
+      setResponse(reply.text);
+      setResponseSource(reply.source);
     } catch (err) {
+      if (isAbort(err)) return;
       console.warn(err);
-      setResponse("Unable to generate response right now. Please try again.");
+      setResponse("Unable to generate a prayer right now. Please try again.");
+      setResponseSource("offline");
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   };
 
   const handleExplainScripture = async () => {
     if (!customPrompt.trim()) return;
+    const signal = startRequest();
     setLoading(true);
     setResponse("");
+    setResponseSource(null);
     setCopied(false);
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const res = await askOpenCodeZen(
+      const reply = await askAi(
         `Provide a spiritual reflection, historical context, and practical daily application for this verse/topic: "${customPrompt}".`,
         {
-          system: "You are a warm biblical scholar and devotional guide.",
+          system:
+            "You are a warm biblical scholar and devotional guide. Quote only public-domain translations such as the King James Version.",
           model: selectedModel,
+          signal,
         },
       );
-      setResponse(res);
+      setResponse(reply.text);
+      setResponseSource(reply.source);
     } catch (err) {
+      if (isAbort(err)) return;
       console.warn(err);
       setResponse("Unable to explain scripture at this time.");
+      setResponseSource("offline");
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   };
 
@@ -162,27 +226,41 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
     if (!chatInput.trim() || loading) return;
     const userMsg = chatInput.trim();
     setChatInput("");
+    // Prior turns, oldest first. Without this the "chat" answered every
+    // message in isolation and could not follow up on anything.
+    const history: AiMessage[] = chatMessages
+      .slice(-MAX_HISTORY_TURNS)
+      .map((m) => ({ role: m.role, content: m.text }));
+
     setChatMessages((prev) => [...prev, { role: "user", text: userMsg }]);
+    const signal = startRequest();
     setLoading(true);
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const res = await askOpenCodeZen(userMsg, {
+      const reply = await askAi(userMsg, {
         system:
-          "You are a compassionate, encouraging Christian companion helping users grow in faith, prayer, and scripture understanding.",
+          "You are a compassionate, encouraging Christian companion helping users grow in faith, prayer, and scripture understanding. Quote only public-domain translations such as the King James Version.",
         model: selectedModel,
+        history,
+        signal,
       });
-      setChatMessages((prev) => [...prev, { role: "assistant", text: res }]);
-    } catch {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: reply.text, source: reply.source },
+      ]);
+    } catch (err) {
+      if (isAbort(err)) return;
       setChatMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           text: "Sorry, I hit an error processing that message.",
+          source: "offline",
         },
       ]);
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   };
 
@@ -238,7 +316,7 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
                   AI Prayer Features
                 </Text>
                 <Text style={[styles.subtitle, { color: subTextColor }]}>
-                  Powered by OpenCode Zen
+                  {aiConfigured ? "Prayer, scripture and reflection" : "Offline reflections"}
                 </Text>
               </View>
             </View>
@@ -250,7 +328,17 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
             </Pressable>
           </View>
 
+          {!aiConfigured && (
+            <View style={[styles.noticeBar, { backgroundColor: cardBg }]}>
+              <Text style={[styles.noticeText, { color: subTextColor }]}>
+                The AI companion is not enabled in this build, so answers below are
+                written offline reflections rather than generated replies.
+              </Text>
+            </View>
+          )}
+
           {/* Model Selector Bar */}
+          {aiConfigured && (
           <View style={styles.modelBarContainer}>
             <Text style={[styles.modelBarLabel, { color: subTextColor }]}>
               AI Engine:
@@ -260,7 +348,7 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.modelScroll}
             >
-              {OPENCODE_ZEN_FREE_MODELS.map((m) => {
+              {AI_MODELS.map((m) => {
                 const active = selectedModel === m.id;
                 return (
                   <Pressable
@@ -287,6 +375,7 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
               })}
             </ScrollView>
           </View>
+          )}
 
           {/* Feature Tabs */}
           <View style={[styles.tabBar, { backgroundColor: cardBg }]}>
@@ -439,6 +528,11 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
                   <View
                     style={[styles.responseCard, { backgroundColor: cardBg }]}
                   >
+                    {fallbackNotice(responseSource) && (
+                      <Text style={[styles.fallbackNotice, { color: subTextColor }]}>
+                        {fallbackNotice(responseSource)}
+                      </Text>
+                    )}
                     <Text style={[styles.responseText, { color: textColor }]}>
                       {response}
                     </Text>
@@ -508,6 +602,11 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
                   <View
                     style={[styles.responseCard, { backgroundColor: cardBg }]}
                   >
+                    {fallbackNotice(responseSource) && (
+                      <Text style={[styles.fallbackNotice, { color: subTextColor }]}>
+                        {fallbackNotice(responseSource)}
+                      </Text>
+                    )}
                     <Text style={[styles.responseText, { color: textColor }]}>
                       {response}
                     </Text>
@@ -545,6 +644,11 @@ export function AiAssistantModal({ visible, onClose, initialTopic }: Props) {
                           : [styles.aiBubble, { backgroundColor: cardBg }],
                       ]}
                     >
+                      {msg.role === "assistant" && fallbackNotice(msg.source) && (
+                        <Text style={[styles.fallbackNotice, { color: subTextColor }]}>
+                          {fallbackNotice(msg.source)}
+                        </Text>
+                      )}
                       <Text
                         style={[
                           styles.chatText,
@@ -730,6 +834,24 @@ const styles = StyleSheet.create({
     color: "#292B28",
     fontWeight: "700",
     fontSize: 14,
+  },
+  noticeBar: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  noticeText: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  fallbackNotice: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 8,
   },
   responseCard: {
     borderRadius: 18,

@@ -1,7 +1,7 @@
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import { getDb } from '@/db/client';
+import { getDb, todayDate } from '@/db/client';
 
 export interface UserExportData {
   version: string;
@@ -37,7 +37,7 @@ export class ExportImportService {
       const jsonString = JSON.stringify(payload, null, 2);
       const backupFile = new File(
         Paths.cache,
-        `DailyPrayer_Backup_${new Date().toISOString().split('T')[0]}.json`
+        `DailyPrayer_Backup_${todayDate()}.json`
       );
 
       // create() throws if the file already exists (same-day re-export).

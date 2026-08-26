@@ -178,16 +178,20 @@ swallows crashes with no reporting, so you would be blind in production.
 - [ ] Report from `ErrorBoundary.componentDidCatch` and the service-level catches
 - [ ] Add funnel analytics: onboarding completion, paywall view → purchase, D1/D7 retention
 
-### H4 — AI assistant has no guardrails
+### H4 — AI assistant guardrails *(mostly closed)*
 
-[opencode-zen.ts](src/services/opencode-zen.ts) sends free-text prompts to a third
-party with no rate limiting, no moderation, and no user disclosure.
+The service is now [ai-assistant.ts](src/services/ai-assistant.ts) — see
+[docs/ai-assistant.md](docs/ai-assistant.md). `opencode-zen.ts` and its
+user-supplied-key flow in Settings are gone.
 
+- [x] Prefer the server proxy (`EXPO_PUBLIC_AI_PROXY_URL`) over user-supplied keys —
+      it is now the only path; without it the assistant reports itself unavailable
+- [x] Rate-limit per device (20 / 10 min, in-app)
+- [x] Crisis-resources response path — checked before anything is sent
+- [ ] Stand up the proxy and enforce the real per-user limit there (the in-app
+      limiter is a runaway-loop guard, not abuse protection)
 - [ ] Disclose the third-party AI in the privacy policy and in-app before first use
-- [ ] Rate-limit per device
-- [ ] Consider that a prayer app attracts crisis disclosures — add a crisis-resources
-      response path rather than a generic model answer
-- [ ] Prefer the server proxy (`EXPO_PUBLIC_AI_PROXY_URL`) over user-supplied keys
+- [ ] Add moderation on the proxy side
 
 ### H5 — Asset and metadata cleanup
 
@@ -200,15 +204,22 @@ party with no rate limiting, no moderation, and no user disclosure.
 - [ ] Store screenshots for every required device size
 - [ ] App name, subtitle, keywords, description, and what's-new copy
 
-### H6 — Background refresh is not configured for iOS
+### H6 — Background refresh: deprecated API, not a missing background mode
 
-[background-tasks.ts](src/services/background-tasks.ts) registers a daily verse
-refresh, but `app.json` declares no `UIBackgroundModes: ["fetch"]` or
-`BGTaskSchedulerPermittedIdentifiers`. On iOS the task will not run. (Note `audio` was
-added for soundscapes; `fetch`/`processing` are separate.)
+**Correction to an earlier version of this plan.** It claimed `UIBackgroundModes:
+["fetch"]` was missing. It is not: the `expo-background-fetch` config plugin adds it
+during prebuild. Verified against the generated `ios/DailyPrayer/Info.plist`, which
+contains `UIBackgroundModes = [audio, fetch]`.
 
-- [ ] Add the required iOS background mode and task identifiers, or drop the task
-- [ ] Verify on device — background fetch cannot be tested in a simulator
+The real problem is that `expo-background-fetch` is **deprecated in SDK 57** — "not
+receiving patches and will be removed in an upcoming release" — replaced by
+[`expo-background-task`](https://docs.expo.dev/versions/v57.0.0/sdk/background-task/),
+which needs `processing` plus `BGTaskSchedulerPermittedIdentifiers`.
+
+- [ ] Migrate [background-tasks.ts](src/services/background-tasks.ts) to `expo-background-task`
+- [ ] Verify on device — background execution cannot be tested in a simulator
+- [ ] Note the task only refreshes a widget payload and no widget exists yet (B1);
+      if widgets are cut for v1, drop the task rather than migrating it
 
 ---
 

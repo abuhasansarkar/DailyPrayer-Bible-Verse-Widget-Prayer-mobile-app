@@ -1,4 +1,7 @@
 import { useSubscriptionStore } from '@/store/subscription.store';
+import { PRO_ENTITLEMENT } from '@/constants/revenuecat';
+
+export { PRO_ENTITLEMENT };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Entitlements
@@ -7,6 +10,10 @@ import { useSubscriptionStore } from '@/store/subscription.store';
 // actually enforced somewhere in the app, and the paywall copy in
 // src/app/premium/index.tsx is generated from FREE_FEATURES/PREMIUM_FEATURES
 // below — so the two cannot drift apart.
+//
+// "Paid" means exactly one thing: the RevenueCat `dailyprayer_pro`
+// entitlement is active. services/revenuecat.ts maps that entitlement onto
+// the subscription store's tier, and everything below reads the store.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const FREE_LIMITS = {
@@ -59,6 +66,10 @@ export const PREMIUM_FEATURES: { icon: string; text: string }[] = [
 /**
  * Read premium status outside React (services, store actions, event handlers).
  * Inside components prefer `useIsPremium()` so the UI re-renders on change.
+ *
+ * Reads the mirrored store rather than calling the SDK, so it is synchronous
+ * and safe inside a render-adjacent code path. The mirror is kept current by
+ * RevenueCat's customer-info listener.
  */
 export function isPremiumNow(): boolean {
   return useSubscriptionStore.getState().tier !== 'free';

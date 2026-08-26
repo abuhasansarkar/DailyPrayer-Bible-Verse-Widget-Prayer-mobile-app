@@ -1,4 +1,5 @@
-import { getBibleVerse, normalizeBookSlug } from './bibleApi';
+import { getBibleVerse, formatBibleText, normalizeBookSlug } from './bibleApi';
+import { todayDate } from '@/db/client';
 
 export interface DailyVerseItem {
   id: string;
@@ -50,7 +51,7 @@ function getDeterministicIndex(dateStr: string, length: number): number {
 }
 
 export async function getDailyVerse(dateStr?: string): Promise<DailyVerseItem> {
-  const targetDate = dateStr || new Date().toISOString().split('T')[0];
+  const targetDate = dateStr || todayDate();
   const index = getDeterministicIndex(targetDate, CURATED_DAILY_VERSES.length);
   const selected = CURATED_DAILY_VERSES[index];
 
@@ -70,7 +71,10 @@ export async function getDailyVerse(dateStr?: string): Promise<DailyVerseItem> {
         book: selected.book,
         chapter: selected.chapter,
         verse: selected.verse,
-        text: apiVerse.text.replace(/^¶\s*/, '').trim(),
+        // formatBibleText also strips the translator marginal notes the CDN
+        // appends ("…an expected end.29.11 expected…"); the local pilcrow
+        // strip this replaced left those in the verse of the day.
+        text: formatBibleText(apiVerse.text),
         translation: 'KJV',
         topic: selected.topic,
         date: targetDate,

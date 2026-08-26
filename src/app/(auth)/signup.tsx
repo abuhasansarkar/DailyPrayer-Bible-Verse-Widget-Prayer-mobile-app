@@ -5,12 +5,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Mail, Lock, User, Sparkles } from '@/components/ui/LucideIcons';
 import { supabase } from '@/services/supabase';
 import { useUserStore } from '@/store/user.store';
+import { useResolvedTheme } from '@/hooks/use-theme';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { isDark } = useResolvedTheme();
+
+  // These screens previously hardcoded the light palette, so in dark mode they
+  // rendered as a white sheet with dark-on-dark text.
+  const bg = isDark ? '#1E1C18' : '#FFF9EE';
+  const fieldBg = isDark ? '#2A2720' : '#F5EDD8';
+  const fieldBorder = isDark ? '#3D382E' : '#E8DFC9';
+  const textPrimary = isDark ? '#F5EDD8' : '#292B28';
+  const textSecondary = isDark ? '#B8AD97' : '#77766F';
+  const placeholder = isDark ? '#7A7263' : '#B8AD97';
+  const accentSurface = isDark ? '#332A18' : '#FEF3D1';
 
   const handleSignup = async () => {
     if (!email || !password || !name) {
@@ -43,21 +55,21 @@ export default function SignupScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FFF9EE] px-6 py-4">
+    <SafeAreaView style={{ backgroundColor: bg }} className="flex-1 px-6 py-4">
       {/* Header */}
       <View className="flex-row items-center mb-8">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 rounded-full bg-[#F5EDD8]">
-          <ArrowLeft size={20} color="#292B28" />
+        <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: fieldBg }} className="p-2 rounded-full">
+          <ArrowLeft size={20} color={textPrimary} />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-[#292B28] ml-4">Create Account</Text>
+        <Text style={{ color: textPrimary }} className="text-xl font-bold ml-4">Create Account</Text>
       </View>
 
       <View className="items-center mb-8">
-        <View className="w-16 h-16 rounded-full bg-[#FEF3D1] items-center justify-center mb-3">
+        <View style={{ backgroundColor: accentSurface }} className="w-16 h-16 rounded-full items-center justify-center mb-3">
           <Sparkles size={32} color="#F2B84B" />
         </View>
-        <Text className="text-2xl font-bold text-[#292B28]">Join DailyPrayer</Text>
-        <Text className="text-sm text-[#77766F] mt-1 text-center">
+        <Text style={{ color: textPrimary }} className="text-2xl font-bold">Join DailyPrayer</Text>
+        <Text style={{ color: textSecondary }} className="text-sm mt-1 text-center">
           Create an account to keep your faith journey backed up safely in the cloud.
         </Text>
       </View>
@@ -65,13 +77,13 @@ export default function SignupScreen() {
       {/* Form */}
       <View className="gap-4">
         <View>
-          <Text className="text-xs font-semibold text-[#77766F] uppercase tracking-wider mb-2">Your Name</Text>
-          <View className="flex-row items-center bg-[#F5EDD8] rounded-2xl px-4 py-3 border border-[#E8DFC9]">
-            <User size={18} color="#77766F" className="mr-3" />
+          <Text style={{ color: textSecondary }} className="text-xs font-semibold uppercase tracking-wider mb-2">Your Name</Text>
+          <View style={{ backgroundColor: fieldBg, borderColor: fieldBorder }} className="flex-row items-center rounded-2xl px-4 py-3 border">
+            <User size={18} color={textSecondary} className="mr-3" />
             <TextInput
-              className="flex-1 text-[#292B28] text-base"
+              style={{ color: textPrimary }} className="flex-1 text-base"
               placeholder="Sarah Jenkins"
-              placeholderTextColor="#B8AD97"
+              placeholderTextColor={placeholder}
               value={name}
               onChangeText={setName}
             />
@@ -79,13 +91,13 @@ export default function SignupScreen() {
         </View>
 
         <View>
-          <Text className="text-xs font-semibold text-[#77766F] uppercase tracking-wider mb-2">Email Address</Text>
-          <View className="flex-row items-center bg-[#F5EDD8] rounded-2xl px-4 py-3 border border-[#E8DFC9]">
-            <Mail size={18} color="#77766F" className="mr-3" />
+          <Text style={{ color: textSecondary }} className="text-xs font-semibold uppercase tracking-wider mb-2">Email Address</Text>
+          <View style={{ backgroundColor: fieldBg, borderColor: fieldBorder }} className="flex-row items-center rounded-2xl px-4 py-3 border">
+            <Mail size={18} color={textSecondary} className="mr-3" />
             <TextInput
-              className="flex-1 text-[#292B28] text-base"
+              style={{ color: textPrimary }} className="flex-1 text-base"
               placeholder="you@example.com"
-              placeholderTextColor="#B8AD97"
+              placeholderTextColor={placeholder}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -95,13 +107,13 @@ export default function SignupScreen() {
         </View>
 
         <View>
-          <Text className="text-xs font-semibold text-[#77766F] uppercase tracking-wider mb-2">Password</Text>
-          <View className="flex-row items-center bg-[#F5EDD8] rounded-2xl px-4 py-3 border border-[#E8DFC9]">
-            <Lock size={18} color="#77766F" className="mr-3" />
+          <Text style={{ color: textSecondary }} className="text-xs font-semibold uppercase tracking-wider mb-2">Password</Text>
+          <View style={{ backgroundColor: fieldBg, borderColor: fieldBorder }} className="flex-row items-center rounded-2xl px-4 py-3 border">
+            <Lock size={18} color={textSecondary} className="mr-3" />
             <TextInput
-              className="flex-1 text-[#292B28] text-base"
+              style={{ color: textPrimary }} className="flex-1 text-base"
               placeholder="At least 6 characters"
-              placeholderTextColor="#B8AD97"
+              placeholderTextColor={placeholder}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -124,7 +136,7 @@ export default function SignupScreen() {
 
       {/* Footer Link */}
       <View className="flex-row justify-center mt-8">
-        <Text className="text-[#77766F]">Already have an account? </Text>
+        <Text style={{ color: textSecondary }} className="">Already have an account? </Text>
         <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
           <Text className="text-[#D98262] font-bold">Sign In</Text>
         </TouchableOpacity>

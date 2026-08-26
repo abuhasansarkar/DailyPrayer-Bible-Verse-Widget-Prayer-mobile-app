@@ -1,4 +1,4 @@
-import { getDb, generateId, toJson, todayDate } from './client';
+import { getDb, generateId, toJson, todayDate, toLocalDate } from './client';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Seed data — verses, topics, guided prayers, devotionals, reminders
@@ -106,7 +106,7 @@ export async function seedDatabase(): Promise<void> {
   for (let i = 0; i < 30; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0]!;
+    const dateStr = toLocalDate(date);
     const verseId = featuredVerseIds[i % featuredVerseIds.length]!;
 
     const reflections: Record<string, { reflection: string; prayer: string }> = {

@@ -70,6 +70,26 @@ export async function requestNotificationPermission(): Promise<boolean> {
   }
 }
 
+/**
+ * Whether permission has already been granted, WITHOUT showing a prompt.
+ *
+ * Startup uses this instead of `requestNotificationPermission()`. Requesting
+ * at launch blocked the native splash behind the OS permission dialog, and
+ * asking before the user knows what reminders are for lowers grant rates.
+ * The ask belongs in onboarding's reminder step, which already does it.
+ */
+export async function hasNotificationPermission(): Promise<boolean> {
+  try {
+    const Notifications = getNotifications();
+    if (!Notifications) return false;
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === 'granted';
+  } catch (e) {
+    console.warn('[Notifications] hasNotificationPermission check skipped:', e);
+    return false;
+  }
+}
+
 export async function scheduleReminder(reminder: PrayerReminder): Promise<string[]> {
   try {
     const Notifications = getNotifications();

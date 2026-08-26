@@ -19,11 +19,11 @@ import {
   Lora_600SemiBold,
 } from '@expo-google-fonts/lora';
 
-import { initDb } from '@/db/client';
+import { initDb, todayDate } from '@/db/client';
 import { seedDatabase } from '@/db/seed';
 import { initI18n } from '@/i18n';
-import { initRevenueCat } from '@/services/revenuecat';
-import { requestNotificationPermission, syncRemindersFromDb } from '@/services/notifications';
+import { initRevenueCat, identifyUser } from '@/services/revenuecat';
+import { hasNotificationPermission, syncRemindersFromDb } from '@/services/notifications';
 import { ensureAuth, runFullSync } from '@/services/supabase';
 import { useAppStore } from '@/store/app.store';
 import { useUserStore } from '@/store/user.store';
@@ -108,17 +108,26 @@ export default function RootLayout() {
         // 4. Load streak and favorites from DB
         await useUserStore.getState().loadUserDataFromDb();
 
-        // 5. Init RevenueCat (non-blocking)
+        // 5. Init RevenueCat (non-blocking). Entitlements arrive via the
+        //    customer-info listener, so no screen has to await this.
         initRevenueCat().catch(console.warn);
 
-        // 6. Request notification permission + sync reminders
-        const hasPermission = await requestNotificationPermission();
-        if (hasPermission && prefs?.onboarding_complete) {
-          syncRemindersFromDb().catch(console.warn);
+        // 6. Re-sync reminders if permission is ALREADY granted.
+        //    Deliberately does not request: awaiting the OS permission dialog
+        //    here held the native splash on screen behind it on first launch.
+        //    Onboarding's reminder step is where the ask belongs.
+        if (prefs?.onboarding_complete) {
+          hasNotificationPermission()
+            .then((granted) => (granted ? syncRemindersFromDb() : undefined))
+            .catch(console.warn);
         }
 
-        // 7. Supabase anonymous auth + background sync (non-blocking)
-        ensureAuth().catch(console.warn);
+        // 7. Supabase anonymous auth + background sync (non-blocking).
+        //    Aliasing the RevenueCat customer to the Supabase user id is what
+        //    lets a subscription follow the account onto a second device.
+        ensureAuth()
+          .then((userId) => (userId ? identifyUser(userId) : undefined))
+          .catch(console.warn);
         if (prefs?.onboarding_complete) {
           runFullSync().catch(console.warn);
         }
@@ -131,7 +140,7 @@ export default function RootLayout() {
 
           registerDailyVerseBackgroundTask().catch(console.warn);
 
-          const todayStr = new Date().toISOString().split('T')[0];
+          const todayStr = todayDate();
           const todayVerse = await getDailyVerse(todayStr);
           if (todayVerse) {
             WidgetBridgeService.updateWidgetData({
@@ -145,7 +154,7 @@ export default function RootLayout() {
           console.warn('[RootLayout] Widget/BackgroundTask init warning:', err);
         }
 
-        // 8. Set up notification tap deep-link handler
+        // 9. Set up notification tap deep-link handler
         try {
           const Constants = (await import('expo-constants')).default;
           const { ExecutionEnvironment } = await import('expo-constants');
@@ -277,7 +286,7 @@ export default function RootLayout() {
                 />
                 {/* Settings */}
                 <Stack.Screen name="settings/index" />
-                <Stack.Screen name="settings/screen" />
+                <Stack.Screen name="settings/subscription" />
                 {/* Prayer wall also reachable as a stack route */}
                 <Stack.Screen name="prayer/community" />
                 {/* Catch-all unmatched route handler */}

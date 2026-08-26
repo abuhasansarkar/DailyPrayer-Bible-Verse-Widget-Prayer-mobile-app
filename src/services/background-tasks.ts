@@ -1,5 +1,6 @@
 import { WidgetBridgeService } from './widget-bridge';
 import { getDailyVerse } from './daily-verse-rotation';
+import { todayDate } from '@/db/client';
 
 export const DAILY_VERSE_REFRESH_TASK = 'DAILY_VERSE_REFRESH_TASK';
 
@@ -11,7 +12,7 @@ function initTaskManager() {
     if (TaskManager && typeof TaskManager.defineTask === 'function') {
       TaskManager.defineTask(DAILY_VERSE_REFRESH_TASK, async () => {
         try {
-          const todayStr = new Date().toISOString().split('T')[0];
+          const todayStr = todayDate();
           const verse = await getDailyVerse(todayStr);
 
           if (verse) {

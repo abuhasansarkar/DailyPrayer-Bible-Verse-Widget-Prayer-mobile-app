@@ -1,6 +1,7 @@
 import { View, Text, Pressable, useColorScheme } from 'react-native';
 
 import { useAppStore } from '@/store/app.store';
+import { todayDate } from '@/db/client';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import type { StreakData, StreakMilestone } from '@/types/user';
 
@@ -24,7 +25,7 @@ export function StreakCard({ streak, milestones = [], onPress, compact = false }
   const surfaceBg = isDark ? '#2A2720' : '#F1E6D3';
 
   const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const todayDate = new Date().toISOString().split('T')[0]!;
+  const todayStr = todayDate();
 
   const nextMilestone = MILESTONE_DAYS.find((d) => d > streak.currentStreak) ?? null;
   const daysToNext = nextMilestone ? nextMilestone - streak.currentStreak : null;
@@ -79,7 +80,7 @@ export function StreakCard({ streak, milestones = [], onPress, compact = false }
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         {streak.thisWeek.map((day, i) => {
           const date = new Date(day.date + 'T00:00:00');
-          const isToday = day.date === todayDate;
+          const isToday = day.date === todayStr;
           return (
             <View key={i} style={{ alignItems: 'center', gap: 5, flex: 1 }}>
               <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 10, color: textSecondary }}>

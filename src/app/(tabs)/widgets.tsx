@@ -26,7 +26,9 @@ export default function WidgetsScreen() {
   const textPrimary = isDark ? '#F5EDD8' : '#292B28';
   const textSecondary = isDark ? '#B8AD97' : '#77766F';
 
-  const freeThemes = WIDGET_THEMES.filter((theme) => !theme.isPremium).slice(0, 4);
+  // All free themes — the paywall copy in constants/entitlements promises
+  // "5 widget themes", and slicing to 4 here contradicted it.
+  const freeThemes = WIDGET_THEMES.filter((theme) => !theme.isPremium);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
@@ -44,13 +46,18 @@ export default function WidgetsScreen() {
             </Pressable>
           </View>
 
-          {/* Dev Build Banner */}
+          {/* Honest status banner.
+              The previous copy said native widgets "require an EAS Development
+              Build", which implied they exist and merely need the right build.
+              There is no WidgetKit extension and no AppWidgetProvider in this
+              project, so nothing can render on a home screen yet — see
+              plan.md B1. Saying so is better than a promise the app cannot keep. */}
           <View style={{ marginTop: 12, backgroundColor: '#FEF3D1', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#F2B84B' }}>
             <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12, color: '#292B28' }}>
-              💡 Preview & Customization Mode
+              💡 Theme preview
             </Text>
             <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: '#77766F', marginTop: 2 }}>
-              Customize and preview themes in-app. Native iOS & Android home screen widgets require an EAS Development Build.
+              Design and preview your widget here. Placing it on your home screen is coming in a future update.
             </Text>
           </View>
         </Animated.View>

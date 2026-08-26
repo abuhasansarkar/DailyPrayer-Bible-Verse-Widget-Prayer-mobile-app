@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Switch, useColorScheme, Alert, Linking, Platform } from 'react-native';
+import { useState } from 'react';
+import { View, Text, ScrollView, Pressable, Switch, useColorScheme, Alert, Linking, Platform, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -10,14 +10,6 @@ import { useSubscriptionStore } from '@/store/subscription.store';
 import { AppIcon, AppIconName } from '@/components/ui/AppIcon';
 import { BIBLE_TRANSLATIONS } from '@/types/verse';
 import { ExportImportService } from '@/services/export-import';
-import {
-  getOpenCodeZenApiKey,
-  getOpenCodeZenModel,
-  OPENCODE_ZEN_FREE_MODELS,
-  setOpenCodeZenApiKey,
-  setOpenCodeZenModel,
-  OpenCodeZenModelId,
-} from '@/services/opencode-zen';
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
@@ -26,8 +18,8 @@ export default function SettingsScreen() {
   const { displayName, streak } = useUserStore();
   const { tier } = useSubscriptionStore();
   const isDark = (colorScheme === 'system' ? systemScheme : colorScheme) === 'dark';
-  const [zenConfigured, setZenConfigured] = useState(false);
-  const [zenModel, setZenModel] = useState<OpenCodeZenModelId>('deepseek-v4-flash-free');
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
 
   const bg = isDark ? '#1E1C18' : '#FFF9EE';
   const surfaceBg = isDark ? '#2A2720' : '#F1E6D3';
@@ -35,15 +27,6 @@ export default function SettingsScreen() {
   const textPrimary = isDark ? '#F5EDD8' : '#292B28';
   const textSecondary = isDark ? '#B8AD97' : '#77766F';
   const divider = isDark ? 'rgba(245,237,216,0.07)' : 'rgba(41,43,40,0.07)';
-
-  useEffect(() => {
-    async function loadZenSettings() {
-      const [apiKey, model] = await Promise.all([getOpenCodeZenApiKey(), getOpenCodeZenModel()]);
-      setZenConfigured(Boolean(apiKey));
-      setZenModel(model);
-    }
-    loadZenSettings().catch(console.warn);
-  }, []);
 
   const handleToggleTheme = async (v: boolean) => {
     const newScheme = v ? 'dark' : 'light';
@@ -91,56 +74,36 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleEditProfile = () => {
-    if (Platform.OS !== 'ios') {
-      Alert.alert('Profile name', 'Profile editing from Settings is currently available on iOS.');
-      return;
+  const saveDisplayName = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    useUserStore.getState().setProfile(trimmed);
+    try {
+      const { getDb } = await import('@/db/client');
+      await getDb().runAsync('UPDATE user_preferences SET display_name = ? WHERE id = 1', [trimmed]);
+    } catch (e) {
+      console.warn('Error saving display name:', e);
     }
-    Alert.prompt(
-      'Edit Profile Name',
-      'How should DailyPrayer address you?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Save',
-          onPress: async (name?: string) => {
-            if (name?.trim()) {
-              useUserStore.getState().setProfile(name.trim());
-              try {
-                const { getDb } = await import('@/db/client');
-                await getDb().runAsync('UPDATE user_preferences SET display_name = ? WHERE id = 1', [name.trim()]);
-              } catch (e) {
-                console.warn('Error saving display name:', e);
-              }
-            }
-          },
-        },
-      ],
-      'plain-text',
-      displayName || ''
-    );
   };
 
-  const handleSetZenKey = () => {
-    if (Platform.OS !== 'ios') {
-      Alert.alert('OpenCode Zen', 'Secure API key entry is ready for iOS. Add an Android secure input screen before shipping this flow on Android.');
+  // Alert.prompt is iOS-only, so Android previously got a dead-end
+  // "available on iOS" message. Android now gets a real input sheet.
+  const handleEditProfile = () => {
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Edit Profile Name',
+        'How should DailyPrayer address you?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Save', onPress: (name?: string) => void saveDisplayName(name ?? '') },
+        ],
+        'plain-text',
+        displayName || ''
+      );
       return;
     }
-    Alert.prompt(
-      'OpenCode Zen API Key',
-      'Paste your OpenCode Zen key. It is stored in SecureStore on this device.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Save',
-          onPress: async (key?: string) => {
-            await setOpenCodeZenApiKey(key ?? '');
-            setZenConfigured(Boolean(key?.trim()));
-          },
-        },
-      ],
-      'secure-text'
-    );
+    setNameDraft(displayName || '');
+    setShowNameModal(true);
   };
 
   const handleExportData = async () => {
@@ -173,13 +136,6 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleCycleZenModel = async () => {
-    const currentIdx = OPENCODE_ZEN_FREE_MODELS.findIndex((model) => model.id === zenModel);
-    const next = OPENCODE_ZEN_FREE_MODELS[(currentIdx + 1) % OPENCODE_ZEN_FREE_MODELS.length]!;
-    await setOpenCodeZenModel(next.id);
-    setZenModel(next.id);
-  };
-
   type RowData = {
     label: string;
     icon: AppIconName;
@@ -209,13 +165,6 @@ export default function SettingsScreen() {
       ],
     },
     {
-      title: 'OpenCode Zen',
-      rows: [
-        { label: 'API Key', icon: 'lock', value: zenConfigured ? 'Connected' : 'Not set', onPress: handleSetZenKey, accent: '#292B28' },
-        { label: 'Free Model', icon: 'ai', value: OPENCODE_ZEN_FREE_MODELS.find((model) => model.id === zenModel)?.name, onPress: handleCycleZenModel, accent: '#D98262' },
-      ],
-    },
-    {
       title: 'Data & Backup',
       rows: [
         { label: 'Export backup', icon: 'shield', value: 'JSON', onPress: handleExportData, accent: '#96AA88' },
@@ -226,7 +175,15 @@ export default function SettingsScreen() {
       title: 'Account',
       rows: [
         { label: 'Sign in', icon: 'phone', value: 'Sync & restore', onPress: () => router.push('/(auth)/login'), accent: '#B8A8CC' },
-        { label: t('settings.subscription'), icon: 'sparkle', value: tier === 'free' ? 'Free' : 'Premium', onPress: () => router.push('/premium'), accent: '#F2B84B' },
+        {
+          label: t('settings.subscription'),
+          icon: 'sparkle',
+          value: tier === 'lifetime' ? 'Lifetime' : tier === 'premium' ? 'Premium' : 'Free',
+          // Paying users land in the Customer Center (change plan, cancel,
+          // refund, restore); free users land on the paywall.
+          onPress: () => router.push(tier === 'free' ? '/premium' : '/settings/subscription'),
+          accent: '#F2B84B',
+        },
         { label: t('settings.privacy'), icon: 'shield', onPress: () => Linking.openURL('https://dailyprayer.app/privacy').catch(() => {}), accent: '#96AA88' },
         { label: t('settings.help'), icon: 'help', onPress: () => Linking.openURL('mailto:support@dailyprayer.app?subject=DailyPrayer%20Support').catch(() => {}), accent: '#7BB8D4' },
         { label: t('settings.about'), icon: 'info', onPress: () => Alert.alert('DailyPrayer v1.0.0', 'A quiet moment with God, every day.\nBuilt with care for your daily spiritual journey.'), accent: '#D98262' },
@@ -301,6 +258,71 @@ export default function SettingsScreen() {
           DailyPrayer v1.0.0
         </Text>
       </ScrollView>
+
+      {/* Name editor for platforms without Alert.prompt (Android). */}
+      <Modal
+        visible={showNameModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowNameModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', paddingHorizontal: 28 }}>
+          <View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 20, gap: 14 }}>
+            <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 17, color: textPrimary }}>
+              Edit Profile Name
+            </Text>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 13, color: textSecondary }}>
+              How should DailyPrayer address you?
+            </Text>
+            <TextInput
+              value={nameDraft}
+              onChangeText={setNameDraft}
+              autoFocus
+              maxLength={40}
+              placeholder="Your name"
+              placeholderTextColor={textSecondary}
+              accessibilityLabel="Profile name"
+              style={{
+                backgroundColor: surfaceBg,
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                fontFamily: 'Inter_400Regular',
+                fontSize: 15,
+                color: textPrimary,
+              }}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+              <Pressable
+                onPress={() => setShowNameModal(false)}
+                accessibilityRole="button"
+                style={{ paddingHorizontal: 16, paddingVertical: 10 }}
+              >
+                <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: textSecondary }}>
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  await saveDisplayName(nameDraft);
+                  setShowNameModal(false);
+                }}
+                disabled={!nameDraft.trim()}
+                accessibilityRole="button"
+                style={{
+                  backgroundColor: '#F2B84B',
+                  opacity: nameDraft.trim() ? 1 : 0.5,
+                  borderRadius: 12,
+                  paddingHorizontal: 18,
+                  paddingVertical: 10,
+                }}
+              >
+                <Text style={{ fontFamily: 'Inter_700Bold', fontSize: 14, color: '#292B28' }}>Save</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

@@ -97,6 +97,26 @@ export function nowIso(): string {
   return new Date().toISOString();
 }
 
+/**
+ * Format a Date as a local `yyyy-MM-dd` calendar date.
+ *
+ * NOT `toISOString().split('T')[0]` — that is the UTC date. For anyone west
+ * of UTC it rolls over before local midnight (a user in UTC-5 sees "tomorrow"
+ * from 7pm), and east of UTC it rolls over late. In a daily-habit app that
+ * means the verse changes at the wrong hour and the streak is credited to the
+ * wrong day.
+ *
+ * The streak store keys on the local date (date-fns `format`), so every other
+ * "today" in the app has to agree with it.
+ */
+export function toLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** The device's current local calendar date, as `yyyy-MM-dd`. */
 export function todayDate(): string {
-  return new Date().toISOString().split('T')[0]!;
+  return toLocalDate(new Date());
 }
